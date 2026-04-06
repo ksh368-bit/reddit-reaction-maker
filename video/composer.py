@@ -11,12 +11,14 @@ Uses the same approach as the original RedditVideoMakerBot:
 import os
 from pathlib import Path
 
+import numpy as np
 from moviepy import (
     AudioFileClip,
     ColorClip,
     CompositeVideoClip,
     CompositeAudioClip,
     ImageClip,
+    VideoClip,
     VideoFileClip,
 )
 from rich.console import Console
@@ -55,6 +57,9 @@ class VideoComposer:
         # Background music settings
         self.bgm_enabled = video_cfg.get("bgm_enabled", True)
         self.bgm_volume = video_cfg.get("bgm_volume", 0.15)
+
+        # Watermark overlay (e.g. "r/roblox")
+        self.watermark = video_cfg.get("watermark", "")
 
         self.output_dir = config.get("output", {}).get("dir", "output")
         os.makedirs(self.output_dir, exist_ok=True)
@@ -157,6 +162,58 @@ class VideoComposer:
             console.print(f"  [yellow]Screenshot clip error: {e}[/yellow]")
             return None
 
+    def _create_progress_bar(self, total_duration: float) -> VideoClip:
+        """Create a progress bar clip that fills left-to-right over total_duration."""
+        bar_height = 10
+        width = self.width
+
+        def make_frame(t):
+            progress = min(t / total_duration, 1.0)
+            frame = np.full((bar_height, width, 3), [34, 34, 34], dtype=np.uint8)
+            fill_w = max(0, int(progress * width))
+            if fill_w > 0:
+                frame[:, :fill_w] = [255, 69, 0]
+            return frame
+
+        bar = VideoClip(make_frame, duration=total_duration)
+        return bar.with_position((0, self.height - bar_height))
+
+    def _create_watermark_clip(
+        self, total_duration: float, temp_dir: str
+    ) -> ImageClip | None:
+        """Create a semi-transparent watermark text overlay (top-right corner)."""
+        if not self.watermark:
+            return None
+
+        try:
+            from PIL import Image, ImageDraw
+            from video.card_renderer import _load_font
+
+            font = _load_font(self.font_path, 28)
+
+            # Measure text on a temp canvas
+            tmp = Image.new("RGBA", (400, 60), (0, 0, 0, 0))
+            tmp_draw = ImageDraw.Draw(tmp)
+            bbox = tmp_draw.textbbox((0, 0), self.watermark, font=font)
+            w = bbox[2] - bbox[0] + 20
+            h = bbox[3] - bbox[1] + 10
+
+            img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(img)
+            draw.text((10, 5), self.watermark, fill=(255, 255, 255, 153), font=font)
+
+            path = os.path.join(temp_dir, "_watermark.png")
+            img.save(path, "PNG")
+
+            clip = ImageClip(path, duration=total_duration)
+            x = self.width - w - 20
+            y = 20
+            return clip.with_position((x, y))
+
+        except Exception as e:
+            console.print(f"  [yellow]Watermark error: {e}[/yellow]")
+            return None
+
     def _create_bgm_clip(self, duration: float) -> AudioFileClip | None:
         """Create a background music audio clip (volume-adjusted)."""
         if not self.bgm_enabled:
@@ -214,6 +271,7 @@ class VideoComposer:
                     seg["author"] = getattr(post, "author", "Author")
                     seg["score"] = getattr(post, "score", 0)
                     seg["subreddit"] = getattr(post, "subreddit", "roblox")
+                    seg["num_comments"] = getattr(post, "num_comments", 0)
 
             segments = capture_post_screenshots(
                 post, segments, cards_dir, theme="dark",
@@ -270,8 +328,15 @@ class VideoComposer:
                     overlay_clips.append(clip)
 
             # ── Step 5: Compose all layers ──
+            progress_bar = self._create_progress_bar(total_duration)
+            watermark_clip = self._create_watermark_clip(total_duration, cards_dir)
+
+            extra_clips = [progress_bar]
+            if watermark_clip is not None:
+                extra_clips.append(watermark_clip)
+
             final_video = CompositeVideoClip(
-                [bg_clip] + overlay_clips,
+                [bg_clip] + overlay_clips + extra_clips,
                 size=(self.width, self.height),
             )
 

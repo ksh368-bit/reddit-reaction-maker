@@ -102,6 +102,7 @@ def render_title_card(
     card_width: int = 800,
     font_path: str | None = None,
     font_size: int = 48,
+    num_comments: int = 0,
 ) -> Image.Image:
     """
     Render a Reddit-style title card as PNG.
@@ -113,7 +114,7 @@ def render_title_card(
     │  Title text here that       │
     │  wraps nicely               │
     │                             │
-    │  ▲ 1.2k                     │
+    │  ▲ 1.2k   💬 3.8k           │
     └─────────────────────────────┘
     """
     padding = 36
@@ -140,8 +141,8 @@ def render_title_card(
 
     # Score line
     score_str = _format_score(score)
-    score_display = f"^  {score_str}"
-    score_bbox = temp_draw.textbbox((0, 0), score_display, font=score_font)
+    comments_str = _format_score(num_comments) if num_comments > 0 else ""
+    score_bbox = temp_draw.textbbox((0, 0), score_str, font=score_font)
     score_height = score_bbox[3] - score_bbox[1]
 
     # Calculate total card height
@@ -155,12 +156,28 @@ def render_title_card(
         + padding        # bottom padding
     )
 
-    # Render card
-    img = Image.new("RGBA", (card_width, card_height), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
+    # Drop shadow + card on larger canvas
+    shadow_size = 6
+    total_w = card_width + shadow_size
+    total_h = card_height + shadow_size
+    img = Image.new("RGBA", (total_w, total_h), (0, 0, 0, 0))
+    shadow = Image.new("RGBA", (total_w, total_h), (0, 0, 0, 0))
+    shadow_draw = ImageDraw.Draw(shadow)
+    shadow_draw.rounded_rectangle(
+        [shadow_size, shadow_size, card_width + shadow_size, card_height + shadow_size],
+        radius=16, fill=(0, 0, 0, 140),
+    )
+    from PIL import ImageFilter
+    shadow = shadow.filter(ImageFilter.GaussianBlur(radius=3))
+    img.paste(shadow, (0, 0), shadow)
 
-    # Card background with rounded corners
-    _draw_rounded_rect(draw, (0, 0, card_width, card_height), 16, COLORS["card_bg"])
+    # Card layer
+    card = Image.new("RGBA", (total_w, total_h), (0, 0, 0, 0))
+    card_draw = ImageDraw.Draw(card)
+    card_draw.rounded_rectangle([0, 0, card_width, card_height], radius=16, fill=COLORS["card_bg"])
+    img.paste(card, (0, 0), card)
+
+    draw = ImageDraw.Draw(img)
 
     y = padding
 
@@ -179,9 +196,14 @@ def render_title_card(
     draw.line([(padding, y), (card_width - padding, y)], fill=COLORS["divider"], width=1)
     y += 15
 
-    # Score
-    draw.text((padding, y), "^", fill=COLORS["upvote"], font=score_font)
-    draw.text((padding + 20, y), f" {score_str}", fill=COLORS["score_text"], font=score_font)
+    # Score row: ▲ (polygon) + score + optional comment count
+    _draw_score_row(
+        draw, padding, y,
+        score_str=score_str, comments_str=comments_str,
+        score_font=score_font, score_height=score_height,
+        upvote_color=COLORS["upvote"], score_text_color=COLORS["score_text"],
+        meta_color=COLORS["meta_text"],
+    )
 
     return img
 
@@ -242,8 +264,7 @@ def render_comment_card(
 
     # Score
     score_str = _format_score(score)
-    score_display = f"^  {score_str}"
-    score_bbox = temp_draw.textbbox((0, 0), score_display, font=score_font)
+    score_bbox = temp_draw.textbbox((0, 0), score_str, font=score_font)
     score_height = score_bbox[3] - score_bbox[1]
 
     # Card height
@@ -257,12 +278,28 @@ def render_comment_card(
         + padding
     )
 
-    # Render
-    img = Image.new("RGBA", (card_width, card_height), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
+    # Drop shadow + card on larger canvas
+    shadow_size = 6
+    total_w = card_width + shadow_size
+    total_h = card_height + shadow_size
+    img = Image.new("RGBA", (total_w, total_h), (0, 0, 0, 0))
+    shadow = Image.new("RGBA", (total_w, total_h), (0, 0, 0, 0))
+    shadow_draw = ImageDraw.Draw(shadow)
+    shadow_draw.rounded_rectangle(
+        [shadow_size, shadow_size, card_width + shadow_size, card_height + shadow_size],
+        radius=16, fill=(0, 0, 0, 140),
+    )
+    from PIL import ImageFilter
+    shadow = shadow.filter(ImageFilter.GaussianBlur(radius=3))
+    img.paste(shadow, (0, 0), shadow)
 
-    # Card background
-    _draw_rounded_rect(draw, (0, 0, card_width, card_height), 16, COLORS["card_bg"])
+    # Card layer
+    card = Image.new("RGBA", (total_w, total_h), (0, 0, 0, 0))
+    card_draw = ImageDraw.Draw(card)
+    card_draw.rounded_rectangle([0, 0, card_width, card_height], radius=16, fill=COLORS["card_bg"])
+    img.paste(card, (0, 0), card)
+
+    draw = ImageDraw.Draw(img)
 
     # Left accent bar (Reddit comment thread line)
     draw.rectangle(
@@ -283,9 +320,14 @@ def render_comment_card(
 
     y += 8
 
-    # Score
-    draw.text((inner_padding, y), "^", fill=COLORS["upvote"], font=score_font)
-    draw.text((inner_padding + 18, y), f" {score_str}", fill=COLORS["score_text"], font=score_font)
+    # Score row: ▲ (polygon) + score
+    _draw_score_row(
+        draw, inner_padding, y,
+        score_str=score_str, comments_str="",
+        score_font=score_font, score_height=score_height,
+        upvote_color=COLORS["upvote"], score_text_color=COLORS["score_text"],
+        meta_color=COLORS["meta_text"],
+    )
 
     return img
 
@@ -319,6 +361,7 @@ def render_cards_for_post(
                 card_width=card_width,
                 font_path=font_path,
                 font_size=title_font_size,
+                num_comments=seg.get("num_comments", 0),
             )
         else:
             card_img = render_comment_card(
@@ -357,3 +400,47 @@ def _draw_rounded_rect(
     """Draw a rounded rectangle."""
     x0, y0, x1, y1 = coords
     draw.rounded_rectangle([x0, y0, x1, y1], radius=radius, fill=fill)
+
+
+def _draw_upvote_icon(draw: ImageDraw.Draw, x: int, y: int, size: int, color: tuple):
+    """Draw a filled upvote triangle (▲) using polygon — avoids font glyph issues."""
+    half = size // 2
+    points = [
+        (x + half, y),           # top center
+        (x, y + size),           # bottom left
+        (x + size, y + size),    # bottom right
+    ]
+    draw.polygon(points, fill=color)
+
+
+def _draw_score_row(
+    draw: ImageDraw.Draw,
+    x: int,
+    y: int,
+    score_str: str,
+    comments_str: str,
+    score_font,
+    score_height: int,
+    upvote_color: tuple,
+    score_text_color: tuple,
+    meta_color: tuple,
+):
+    """
+    Draw  ▲ 4.9k   · 3.8k cmts  using a polygon icon (no emoji/unicode glyphs).
+    Returns the x position after the drawn content.
+    """
+    icon_size = max(10, score_height - 4)
+    icon_y = y + (score_height - icon_size) // 2
+
+    _draw_upvote_icon(draw, x, icon_y, icon_size, upvote_color)
+    x += icon_size + 8
+    draw.text((x, y), score_str, fill=score_text_color, font=score_font)
+
+    if comments_str:
+        from PIL import ImageDraw as _ID
+        # measure score text width
+        tmp = Image.new("RGB", (400, 60))
+        tmp_draw = _ID.Draw(tmp)
+        sw = tmp_draw.textbbox((0, 0), score_str, font=score_font)
+        x += sw[2] - sw[0] + 20
+        draw.text((x, y), f"· {comments_str} cmts", fill=meta_color, font=score_font)
