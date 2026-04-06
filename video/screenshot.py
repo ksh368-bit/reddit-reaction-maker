@@ -48,9 +48,8 @@ def capture_post_screenshots(
         try:
             return _capture_from_reddit(post, segments, output_dir, theme)
         except Exception as e:
-            # Sanitize error message for Windows cp949 console
             err_msg = str(e).encode("ascii", errors="replace").decode("ascii")
-            console.print(f"  [yellow]Playwright unavailable, using card renderer[/yellow]")
+            console.print(f"  [yellow]Reddit screenshot failed ({err_msg[:80]}), using card renderer[/yellow]")
 
     # Fallback: use Pillow card renderer
     from video.card_renderer import render_cards_for_post
@@ -71,22 +70,38 @@ def _capture_from_reddit(
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
-            args=["--ignore-certificate-errors"],
+            args=[
+                "--ignore-certificate-errors",
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-web-security",
+                "--disable-features=IsolateOrigins,site-per-process",
+            ],
         )
 
-        # Dark theme colors
-        if theme == "dark":
-            color_scheme = "dark"
-        else:
-            color_scheme = "light"
+        color_scheme = "dark" if theme == "dark" else "light"
 
         context = browser.new_context(
             viewport={"width": 800, "height": 2000},
             device_scale_factor=2,
             color_scheme=color_scheme,
             locale="en-US",
+            user_agent=(
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
         )
-        # Set Reddit dark mode cookie
+
+        # Inject JS before any page script to hide webdriver fingerprint
+        context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+            Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3] });
+            Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+            window.chrome = { runtime: {} };
+        """)
+
         context.add_cookies([{
             "name": "over18",
             "value": "1",
@@ -96,15 +111,24 @@ def _capture_from_reddit(
 
         page = context.new_page()
 
-        # Navigate to the post
-        post_url = f"https://www.reddit.com/comments/{post.id}"
+        # Use old Reddit which is simpler HTML and less likely to be blocked
+        post_url = f"https://old.reddit.com/comments/{post.id}"
         console.print(f"  [dim]Navigating to: {post_url}[/dim]")
         page.goto(post_url, wait_until="domcontentloaded", timeout=30000)
+        page.wait_for_timeout(2000)
 
-        # Wait for content to load
-        page.wait_for_timeout(3000)
+        # Detect Cloudflare / network security block
+        page_text = page.evaluate("() => document.body ? document.body.innerText : ''")
+        if any(phrase in page_text for phrase in [
+            "blocked by network security",
+            "cf-error",
+            "Enable JavaScript and cookies",
+            "Checking your browser",
+            "Just a moment",
+        ]):
+            browser.close()
+            raise RuntimeError("Reddit page blocked by security (Cloudflare). Falling back to card renderer.")
 
-        # Apply dark theme via Reddit's preferences
         if theme == "dark":
             page.evaluate("""
                 document.cookie = 'theme=dark; domain=.reddit.com; path=/';
@@ -200,14 +224,15 @@ def _dismiss_popups(page):
 
 def _screenshot_post_title(page, output_path: str) -> bool:
     """Screenshot the post title/content area."""
-    # Try new Reddit (shreddit) selectors first, then old Reddit
+    # old.reddit.com selectors first, then new Reddit (shreddit)
     selectors = [
+        ".thing.link",           # old Reddit post container
+        "#siteTable .thing",     # old Reddit
+        ".Post",                 # new Reddit
+        "shreddit-post",         # new Reddit shreddit
+        '[data-testid="post-container"]',
         '[data-test-id="post-content"]',
-        'shreddit-post',
-        '[slot="title"]',
-        'article',
-        '.Post',
-        '#t3_' + output_path.split("card_")[0].split("/")[-2] if "/" in output_path else "",
+        "article",
     ]
 
     for selector in selectors:
@@ -216,19 +241,41 @@ def _screenshot_post_title(page, output_path: str) -> bool:
         try:
             elem = page.locator(selector).first
             if elem.is_visible(timeout=2000):
+                # Scroll element into view and screenshot
+                elem.scroll_into_view_if_needed(timeout=2000)
                 elem.screenshot(path=output_path)
-                console.print(f"  [green][OK][/green] Post title screenshot")
+                console.print(f"  [green][OK][/green] Post title screenshot ({selector})")
                 return True
         except Exception:
             continue
 
-    # Fallback: full page screenshot cropped to top area
+    # Fallback: scroll to top, wait for content, then crop below the header
     try:
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_timeout(1000)
+
+        # Try to find the post content bounding box to crop precisely
+        post_y = page.evaluate("""() => {
+            const selectors = ['shreddit-post', 'article', '[data-test-id="post-content"]'];
+            for (const sel of selectors) {
+                const el = document.querySelector(sel);
+                if (el) {
+                    const rect = el.getBoundingClientRect();
+                    return { y: Math.max(0, rect.top), height: Math.min(rect.height, 800) };
+                }
+            }
+            return { y: 80, height: 600 };
+        }""")
+
+        y = int(post_y.get("y", 80))
+        h = int(post_y.get("height", 600))
+        h = max(200, min(h, 900))
+
         page.screenshot(
             path=output_path,
-            clip={"x": 0, "y": 0, "width": 800, "height": 600},
+            clip={"x": 0, "y": y, "width": 800, "height": h},
         )
-        console.print(f"  [dim]Post title: used page crop fallback[/dim]")
+        console.print(f"  [dim]Post title: used page crop fallback (y={y}, h={h})[/dim]")
         return True
     except Exception as e:
         console.print(f"  [yellow]Post title screenshot failed: {e}[/yellow]")
@@ -238,10 +285,11 @@ def _screenshot_post_title(page, output_path: str) -> bool:
 def _screenshot_comment(page, comment_id: str, output_path: str) -> bool:
     """Screenshot a specific comment by ID."""
     selectors = [
+        f"#thing_t1_{comment_id}",              # old Reddit
+        f".comment[data-fullname='t1_{comment_id}']",  # old Reddit
         f"#t1_{comment_id}",
         f'[thingid="t1_{comment_id}"]',
         f'shreddit-comment[thingid="t1_{comment_id}"]',
-        f'[id="t1_{comment_id}"]',
     ]
 
     for selector in selectors:

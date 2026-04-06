@@ -52,7 +52,9 @@ def _download_with_ytdlp(url: str, output_path: str, is_audio: bool = False) -> 
         "nocheckcertificate": True,
     }
     if ffmpeg_path:
-        ydl_opts["ffmpeg_location"] = os.path.dirname(ffmpeg_path)
+        # Pass the full path to the binary (not just the directory),
+        # because the bundled binary may not be named "ffmpeg"
+        ydl_opts["ffmpeg_location"] = ffmpeg_path
 
     if is_audio:
         ydl_opts.update({
@@ -65,8 +67,9 @@ def _download_with_ytdlp(url: str, output_path: str, is_audio: bool = False) -> 
             }],
         })
     else:
+        # Prefer single-file mp4 first to avoid ffmpeg merge requirement
         ydl_opts.update({
-            "format": "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best",
+            "format": "best[height<=1080][ext=mp4]/bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080]/best",
             "merge_output_format": "mp4",
         })
 
@@ -83,8 +86,18 @@ def _download_direct(url: str, output_path: str) -> bool:
     """Download a file directly via HTTP (for Pixabay CDN etc)."""
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Referer": "https://pixabay.com/",
+        "Accept": "audio/webm,audio/ogg,audio/mp3,audio/*;q=0.9,*/*;q=0.8",
+    }
+
     try:
-        resp = requests.get(url, stream=True, timeout=30, verify=False)
+        resp = requests.get(url, stream=True, timeout=30, verify=False, headers=headers)
         resp.raise_for_status()
         with open(output_path, "wb") as f:
             for chunk in resp.iter_content(chunk_size=8192):

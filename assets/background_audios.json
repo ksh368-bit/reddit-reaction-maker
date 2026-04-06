@@ -8,10 +8,10 @@
   ],
   "audios": {
     "lofi-chill": {
-      "url": "https://cdn.pixabay.com/audio/2024/11/01/audio_1f6a4e0e70.mp3",
+      "url": "https://www.youtube.com/watch?v=yeBdCjMwsU8",
       "filename": "lofi-chill.mp3",
-      "credit": "Pixabay",
-      "license": "Pixabay Content License (free, no attribution required)",
+      "credit": "Lofi Spring (No Copyright)",
+      "license": "Free to use (no copyright claimed)",
       "title": "Lofi Chill"
     },
     "good-night": {
@@ -22,10 +22,10 @@
       "title": "Good Night"
     },
     "lofi-study": {
-      "url": "https://cdn.pixabay.com/audio/2023/07/07/audio_e4d4afa0d0.mp3",
+      "url": "https://www.youtube.com/watch?v=i-_1Os7hVDw",
       "filename": "lofi-study.mp3",
-      "credit": "Pixabay",
-      "license": "Pixabay Content License (free, no attribution required)",
+      "credit": "Lofi Chilled Beats (DMCA Free)",
+      "license": "Free to use (DMCA free)",
       "title": "Lofi Study"
     }
   }
