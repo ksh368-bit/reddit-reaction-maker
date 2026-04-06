@@ -21,6 +21,7 @@ from moviepy import (
     VideoClip,
     VideoFileClip,
 )
+from moviepy.video.fx import CrossFadeIn
 from rich.console import Console
 
 from video.background import (
@@ -316,20 +317,28 @@ class VideoComposer:
 
             # ── Step 4: Overlay screenshots synced with audio ──
             overlay_clips = []
+            fade_in = 0.15  # seconds — quick fade-in to soften hard cuts
 
             for start, audio_dur, display_dur, seg in timing_info:
                 card_path = seg.get("card_path")
-                # Clamp display duration so card doesn't exceed video length
                 clamped_display = min(display_dur, total_duration - start)
                 clip = self._create_screenshot_clip(card_path, max(clamped_display, audio_dur))
 
                 if clip:
+                    # Crossfade in so cards don't pop in hard
+                    clip = clip.with_effects([CrossFadeIn(fade_in)])
                     clip = clip.with_start(start)
                     overlay_clips.append(clip)
 
             # ── Step 5: Compose all layers ──
             progress_bar = self._create_progress_bar(total_duration)
+            # Use actual post subreddit for watermark instead of config default
+            post_subreddit = getattr(post, "subreddit", "")
+            watermark_text = f"r/{post_subreddit}" if post_subreddit else self.watermark
+            orig_watermark = self.watermark
+            self.watermark = watermark_text
             watermark_clip = self._create_watermark_clip(total_duration, cards_dir)
+            self.watermark = orig_watermark
 
             extra_clips = [progress_bar]
             if watermark_clip is not None:

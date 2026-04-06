@@ -40,6 +40,7 @@ class RedditPost:
     url: str
     subreddit: str
     comments: list[Comment] = field(default_factory=list)
+    num_comments: int = 0
 
     def all_text_segments(self) -> list[str]:
         """Return all text segments in order: title, body (if any), then comments."""
@@ -241,6 +242,7 @@ class RedditScraper:
                 url=post_data.get("url", ""),
                 subreddit=self.subreddit_name,
                 comments=comments,
+                num_comments=num_comments,
             )
             posts.append(post)
 
@@ -279,6 +281,7 @@ class RedditScraper:
                 url=post_data.get("url", ""),
                 subreddit=post_data.get("subreddit", self.subreddit_name),
                 comments=comments,
+                num_comments=post_data.get("num_comments", 0),
             )
         except (KeyError, IndexError) as e:
             console.print(f"[red]Error parsing post {post_id}: {e}[/red]")

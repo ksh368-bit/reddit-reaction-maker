@@ -145,8 +145,9 @@ def render_title_card(
     score_bbox = temp_draw.textbbox((0, 0), score_str, font=score_font)
     score_height = score_bbox[3] - score_bbox[1]
 
-    # Calculate total card height
-    card_height = (
+    # Calculate total card height — enforce minimum for visual consistency
+    card_height = max(
+        300,  # min height keeps cards uniform across short/long titles
         padding          # top padding
         + meta_height    # subreddit + author
         + 20             # gap
@@ -267,8 +268,9 @@ def render_comment_card(
     score_bbox = temp_draw.textbbox((0, 0), score_str, font=score_font)
     score_height = score_bbox[3] - score_bbox[1]
 
-    # Card height
-    card_height = (
+    # Card height — enforce minimum for visual consistency
+    card_height = max(
+        260,  # min height keeps comment cards uniform across short/long text
         padding
         + meta_height
         + 16
