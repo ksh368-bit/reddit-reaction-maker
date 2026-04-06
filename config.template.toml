@@ -1,35 +1,37 @@
-# Roblox Shorts Video Maker - Configuration
-# No Reddit API key required! Uses .json endpoints directly.
+# Reddit Shorts Video Maker - Configuration Template
+# Copy this file to config.toml and adjust for your channel.
 
 [reddit]
 subreddit = "roblox"
 post_limit = 5          # Number of posts to fetch per run
 min_upvotes = 100       # Minimum upvotes to consider
 min_comments = 10       # Minimum comments on post
-max_comment_length = 500  # Max characters per comment
-top_comments = 5        # Number of top comments to include
+max_comment_length = 200  # Max characters per comment (shorter = punchier)
+top_comments = 4        # At ~20s/comment, 4 comments fills a ~55s Short
 
 [tts]
-engine = "gtts"         # Options: gtts, elevenlabs, openai
+engine = "edge-tts"     # Options: edge-tts (best), gtts
 language = "en"         # Language code: en, ko, ja, etc.
-slow = false            # Slower speech for clarity
+voice = "en-US-GuyNeural"  # edge-tts voice (edge-tts --list-voices for options)
+rate = "+20%"           # edge-tts speed (+20% = faster, natural Shorts pacing)
+slow = false            # gTTS only: slower speech
 
 [video]
 width = 1080
 height = 1920
 fps = 30
-max_duration = 58       # Max seconds (Shorts limit is 60)
+max_duration = 58       # Max seconds (YouTube Shorts limit is 60)
 background_dir = "assets/backgrounds"
-font = "assets/fonts/NotoSansKR-Bold.ttf"
+font = "assets/fonts/Montserrat-Bold.ttf"
 title_font_size = 52
 comment_font_size = 42
 text_color = "white"
 text_stroke_color = "black"
 text_stroke_width = 3
 watermark = "r/roblox"
-opacity = 0.7           # Background dimming (0.0 - 1.0)
+opacity = 0.45          # Background dimming (0.0=bright, 1.0=black)
 bgm_enabled = true      # Background music on/off
-bgm_volume = 0.15       # BGM volume (0.0 - 1.0), keep low so TTS is clear
+bgm_volume = 0.08       # BGM volume — keep well below TTS voice level
 
 [output]
 dir = "output"

@@ -1,5 +1,6 @@
 """Text-to-Speech engine with pluggable providers."""
 
+import asyncio
 import os
 import re
 import tempfile
@@ -41,6 +42,34 @@ class GoogleTTS(TTSProvider):
         return output_path
 
 
+class EdgeTTS(TTSProvider):
+    """
+    Microsoft Edge TTS (free, natural-sounding voices, speed control).
+
+    Uses `edge-tts` Python package. Voice options:
+      en-US-AriaNeural  — female, natural, warm
+      en-US-GuyNeural   — male, conversational
+      en-US-JennyNeural — female, upbeat
+    """
+
+    def __init__(self, voice: str = "en-US-GuyNeural", rate: str = "+20%"):
+        self.voice = voice
+        self.rate = rate  # e.g. "+20%" for faster speech
+
+    def name(self) -> str:
+        return f"Edge TTS ({self.voice})"
+
+    def generate(self, text: str, output_path: str) -> str:
+        import edge_tts
+
+        async def _run():
+            communicate = edge_tts.Communicate(text, self.voice, rate=self.rate)
+            await communicate.save(output_path)
+
+        asyncio.run(_run())
+        return output_path
+
+
 class TTSEngine:
     """
     TTS engine that manages text-to-speech generation for video segments.
@@ -71,14 +100,18 @@ class TTSEngine:
         language = tts_cfg.get("language", "en")
         slow = tts_cfg.get("slow", False)
 
-        if engine_name == "gtts":
+        if engine_name == "edge-tts":
+            voice = tts_cfg.get("voice", "en-US-GuyNeural")
+            rate = tts_cfg.get("rate", "+20%")
+            self.provider = EdgeTTS(voice=voice, rate=rate)
+        elif engine_name == "gtts":
             self.provider = GoogleTTS(language=language, slow=slow)
         else:
             console.print(
                 f"[yellow]Unknown TTS engine '{engine_name}', "
-                f"falling back to gTTS[/yellow]"
+                f"falling back to edge-tts[/yellow]"
             )
-            self.provider = GoogleTTS(language=language, slow=slow)
+            self.provider = EdgeTTS()
 
         console.print(f"[cyan]TTS Engine: {self.provider.name()}[/cyan]")
 

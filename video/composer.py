@@ -145,17 +145,16 @@ class VideoComposer:
             if img_w > target_w:
                 img_clip = img_clip.resized(target_w / img_w)
 
-            # Limit height to top 70% of frame (leave bottom for Shorts UI)
+            # Limit height to top 60% of frame (leave bottom for Shorts UI safe zone)
             img_w, img_h = img_clip.size
-            max_h = int(self.height * 0.70)
+            max_h = int(self.height * 0.60)
             if img_h > max_h:
                 img_clip = img_clip.resized(max_h / img_h)
 
-            # Position: horizontally centered, vertically in upper portion
-            # Top 15% margin keeps card clear of any top UI elements
+            # Position: horizontally centered, 10% from top
             img_w, img_h = img_clip.size
             x = (self.width - img_w) // 2
-            y = int(self.height * 0.12)
+            y = int(self.height * 0.10)
 
             return img_clip.with_position((x, y))
 
@@ -285,7 +284,7 @@ class VideoComposer:
             audio_clips = []
             timing_info = []  # (start_time, audio_duration, display_duration, segment)
             current_time = 0.0
-            gap = 0.3  # shorter gap between segments
+            gap = 0.2  # tight pacing between segments
 
             for seg in segments:
                 audio = AudioFileClip(seg["audio_path"])
