@@ -270,7 +270,7 @@ def render_comment_card(
 
     # Card height — enforce minimum for visual consistency
     card_height = max(
-        260,  # min height keeps comment cards uniform across short/long text
+        320,  # min height keeps comment cards uniform across short/long text
         padding
         + meta_height
         + 16

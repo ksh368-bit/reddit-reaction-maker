@@ -324,8 +324,10 @@ class VideoComposer:
                 clip = self._create_screenshot_clip(card_path, max(clamped_display, audio_dur))
 
                 if clip:
-                    # Crossfade in so cards don't pop in hard
-                    clip = clip.with_effects([CrossFadeIn(fade_in)])
+                    # Fade in comment cards only — title card starts at t=0
+                    # so CrossFadeIn would make it invisible at video open
+                    if start > 0:
+                        clip = clip.with_effects([CrossFadeIn(fade_in)])
                     clip = clip.with_start(start)
                     overlay_clips.append(clip)
 
