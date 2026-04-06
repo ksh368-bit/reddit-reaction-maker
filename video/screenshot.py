@@ -19,6 +19,7 @@ def capture_post_screenshots(
     segments: list[dict],
     output_dir: str,
     theme: str = "dark",
+    **kwargs,
 ) -> list[dict]:
     """
     Capture Reddit post/comment screenshots using Playwright.
@@ -48,7 +49,12 @@ def capture_post_screenshots(
     # (Playwright Reddit screenshots capture the entire comment thread DOM
     # including all replies, resulting in unreadable full-page screenshots)
     from video.card_renderer import render_cards_for_post
-    return render_cards_for_post(post, segments, output_dir)
+    return render_cards_for_post(
+        post, segments, output_dir,
+        font_path=kwargs.get("font_path"),
+        title_font_size=kwargs.get("title_font_size", 48),
+        comment_font_size=kwargs.get("comment_font_size", 40),
+    )
 
 
 def _capture_from_reddit(

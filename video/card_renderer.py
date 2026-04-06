@@ -101,6 +101,7 @@ def render_title_card(
     subreddit: str,
     card_width: int = 800,
     font_path: str | None = None,
+    font_size: int = 48,
 ) -> Image.Image:
     """
     Render a Reddit-style title card as PNG.
@@ -115,13 +116,13 @@ def render_title_card(
     │  ▲ 1.2k                     │
     └─────────────────────────────┘
     """
-    padding = 30
+    padding = 36
     content_width = card_width - padding * 2
 
-    # Fonts
-    title_font = _load_bold_font(font_path, 32)
-    meta_font = _load_font(font_path, 20)
-    score_font = _load_bold_font(font_path, 22)
+    # Fonts - sizes scale with title font_size
+    title_font = _load_bold_font(font_path, font_size)
+    meta_font = _load_font(font_path, max(18, font_size // 2))
+    score_font = _load_bold_font(font_path, max(20, font_size // 2))
 
     # Pre-calculate text layout
     temp_img = Image.new("RGB", (card_width, 100))
@@ -134,7 +135,7 @@ def render_title_card(
 
     # Title lines
     title_lines = _wrap_text_to_width(temp_draw, title, title_font, content_width)
-    line_height = 42
+    line_height = int(font_size * 1.35)
     title_block_height = len(title_lines) * line_height
 
     # Score line
@@ -191,6 +192,7 @@ def render_comment_card(
     score: int,
     card_width: int = 800,
     font_path: str | None = None,
+    font_size: int = 40,
 ) -> Image.Image:
     """
     Render a Reddit-style comment card as PNG.
@@ -206,15 +208,15 @@ def render_comment_card(
     │  ▲ 245                      │
     └─────────────────────────────┘
     """
-    padding = 30
+    padding = 36
     content_width = card_width - padding * 2
-    accent_bar_width = 4
-    inner_padding = padding + accent_bar_width + 12
+    accent_bar_width = 5
+    inner_padding = padding + accent_bar_width + 14
 
-    # Fonts
-    body_font = _load_font(font_path, 28)
-    meta_font = _load_font(font_path, 20)
-    score_font = _load_bold_font(font_path, 20)
+    # Fonts - sizes scale with font_size
+    body_font = _load_font(font_path, font_size)
+    meta_font = _load_font(font_path, max(18, font_size // 2))
+    score_font = _load_bold_font(font_path, max(20, font_size // 2))
 
     # Pre-calculate
     temp_img = Image.new("RGB", (card_width, 100))
@@ -235,7 +237,7 @@ def render_comment_card(
         body_lines = body_lines[:max_lines]
         body_lines[-1] = body_lines[-1][:40] + "..."
 
-    line_height = 38
+    line_height = int(font_size * 1.4)
     body_block_height = len(body_lines) * line_height
 
     # Score
@@ -294,15 +296,15 @@ def render_cards_for_post(
     output_dir: str,
     video_width: int = 1080,
     font_path: str | None = None,
+    title_font_size: int = 48,
+    comment_font_size: int = 40,
 ) -> list[dict]:
     """
     Render all cards for a post and save as PNG files.
 
-    Card width is set to ~45% of video width (matching original bot).
-
     Returns segments list with 'card_path' added to each entry.
     """
-    card_width = int(video_width * 0.85)  # 85% of video width for portrait
+    card_width = int(video_width * 0.88)  # 88% of video width for portrait
     os.makedirs(output_dir, exist_ok=True)
 
     for i, seg in enumerate(segments):
@@ -316,6 +318,7 @@ def render_cards_for_post(
                 subreddit=seg.get("subreddit", "roblox"),
                 card_width=card_width,
                 font_path=font_path,
+                font_size=title_font_size,
             )
         else:
             card_img = render_comment_card(
@@ -324,6 +327,7 @@ def render_cards_for_post(
                 score=seg.get("score", 0),
                 card_width=card_width,
                 font_path=font_path,
+                font_size=comment_font_size,
             )
 
         card_path = os.path.join(output_dir, f"card_{i:02d}.png")

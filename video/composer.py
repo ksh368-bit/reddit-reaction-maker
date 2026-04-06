@@ -44,8 +44,13 @@ class VideoComposer:
         self.background_dir = video_cfg.get("background_dir", "assets/backgrounds")
         self.opacity = video_cfg.get("opacity", 0.7)
 
-        # Screenshot scaling (original bot uses 45% for landscape, we use 90% for portrait)
+        # Screenshot scaling
         self.screenshot_scale = video_cfg.get("screenshot_scale", 0.90)
+
+        # Font settings (passed to card renderer)
+        self.font_path = video_cfg.get("font", None)
+        self.title_font_size = video_cfg.get("title_font_size", 48)
+        self.comment_font_size = video_cfg.get("comment_font_size", 40)
 
         # Background music settings
         self.bgm_enabled = video_cfg.get("bgm_enabled", True)
@@ -117,8 +122,10 @@ class VideoComposer:
         self, card_path: str, duration: float
     ) -> ImageClip | None:
         """
-        Create an ImageClip from a screenshot PNG, scaled and centered.
-        This is the core of the original bot's approach.
+        Create an ImageClip from a screenshot PNG, scaled and positioned.
+
+        Cards are placed in the upper-center area of the frame so they
+        don't get covered by YouTube Shorts / TikTok UI buttons at the bottom.
         """
         if not card_path or not os.path.exists(card_path):
             return None
@@ -126,25 +133,23 @@ class VideoComposer:
         try:
             img_clip = ImageClip(card_path, duration=duration)
 
-            # Scale screenshot to fit within video width
+            # Scale to fit within video width
             img_w, img_h = img_clip.size
             target_w = int(self.width * self.screenshot_scale)
-
             if img_w > target_w:
-                scale = target_w / img_w
-                img_clip = img_clip.resized(scale)
+                img_clip = img_clip.resized(target_w / img_w)
 
-            # Also limit height to prevent overflow
+            # Limit height to top 70% of frame (leave bottom for Shorts UI)
             img_w, img_h = img_clip.size
-            max_h = int(self.height * 0.75)
+            max_h = int(self.height * 0.70)
             if img_h > max_h:
-                scale = max_h / img_h
-                img_clip = img_clip.resized(scale)
+                img_clip = img_clip.resized(max_h / img_h)
 
-            # Center on screen
+            # Position: horizontally centered, vertically in upper portion
+            # Top 15% margin keeps card clear of any top UI elements
             img_w, img_h = img_clip.size
             x = (self.width - img_w) // 2
-            y = (self.height - img_h) // 2
+            y = int(self.height * 0.12)
 
             return img_clip.with_position((x, y))
 
@@ -211,14 +216,17 @@ class VideoComposer:
                     seg["subreddit"] = getattr(post, "subreddit", "roblox")
 
             segments = capture_post_screenshots(
-                post, segments, cards_dir, theme="dark"
+                post, segments, cards_dir, theme="dark",
+                font_path=self.font_path,
+                title_font_size=self.title_font_size,
+                comment_font_size=self.comment_font_size,
             )
 
             # ── Step 2: Load audio and calculate timing ──
             audio_clips = []
-            timing_info = []  # (start_time, duration, segment)
+            timing_info = []  # (start_time, audio_duration, display_duration, segment)
             current_time = 0.0
-            gap = 0.5
+            gap = 0.3  # shorter gap between segments
 
             for seg in segments:
                 audio = AudioFileClip(seg["audio_path"])
@@ -229,7 +237,9 @@ class VideoComposer:
                     break
 
                 audio_clips.append(audio.with_start(current_time))
-                timing_info.append((current_time, clip_duration, seg))
+                # Display duration = audio duration + gap so card stays visible
+                # during the silence between segments (no blank frames)
+                timing_info.append((current_time, clip_duration, clip_duration + gap, seg))
                 current_time += clip_duration + gap
 
             if not audio_clips:
@@ -238,6 +248,7 @@ class VideoComposer:
 
             total_duration = current_time - gap
             total_duration = min(total_duration, self.max_duration)
+            total_duration = max(total_duration, 1.0)
 
             # ── Step 3: Create background ──
             # Try manga cover background first (for manga/manhwa posts)
@@ -248,9 +259,11 @@ class VideoComposer:
             # ── Step 4: Overlay screenshots synced with audio ──
             overlay_clips = []
 
-            for start, duration, seg in timing_info:
+            for start, audio_dur, display_dur, seg in timing_info:
                 card_path = seg.get("card_path")
-                clip = self._create_screenshot_clip(card_path, duration)
+                # Clamp display duration so card doesn't exceed video length
+                clamped_display = min(display_dur, total_duration - start)
+                clip = self._create_screenshot_clip(card_path, max(clamped_display, audio_dur))
 
                 if clip:
                     clip = clip.with_start(start)
