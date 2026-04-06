@@ -44,14 +44,9 @@ def capture_post_screenshots(
         and ("reddit.com" in post.url or post.id and len(post.id) < 15)
     )
 
-    if has_reddit_url:
-        try:
-            return _capture_from_reddit(post, segments, output_dir, theme)
-        except Exception as e:
-            err_msg = str(e).encode("ascii", errors="replace").decode("ascii")
-            console.print(f"  [yellow]Reddit screenshot failed ({err_msg[:80]}), using card renderer[/yellow]")
-
-    # Fallback: use Pillow card renderer
+    # Use Pillow card renderer: produces clean, readable individual cards
+    # (Playwright Reddit screenshots capture the entire comment thread DOM
+    # including all replies, resulting in unreadable full-page screenshots)
     from video.card_renderer import render_cards_for_post
     return render_cards_for_post(post, segments, output_dir)
 
