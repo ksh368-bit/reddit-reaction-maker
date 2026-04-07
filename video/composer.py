@@ -125,13 +125,13 @@ class VideoComposer:
         return None
 
     def _create_screenshot_clip(
-        self, card_path: str, duration: float
+        self, card_path: str, duration: float, seg_type: str = "comment"
     ) -> ImageClip | None:
         """
-        Create an ImageClip from a screenshot PNG, scaled and positioned.
+        Create an ImageClip from a card PNG.
 
-        Cards are placed in the upper-center area of the frame so they
-        don't get covered by YouTube Shorts / TikTok UI buttons at the bottom.
+        - title   : Reddit dark card, scaled and centered in upper half
+        - comment : full-canvas transparent overlay, placed at (0, 0)
         """
         if not card_path or not os.path.exists(card_path):
             return None
@@ -139,28 +139,22 @@ class VideoComposer:
         try:
             img_clip = ImageClip(card_path, duration=duration)
 
-            # Scale to fit within video width
-            img_w, img_h = img_clip.size
-            target_w = int(self.width * self.screenshot_scale)
-            if img_w > target_w:
-                img_clip = img_clip.resized(target_w / img_w)
-
-            # Limit height to top 60% of frame (leave bottom for Shorts UI safe zone)
-            img_w, img_h = img_clip.size
-            max_h = int(self.height * 0.60)
-            if img_h > max_h:
-                img_clip = img_clip.resized(max_h / img_h)
-
-            # Position: horizontally centered, vertically centered in upper half
-            # 30% from top puts card in the visual sweet spot (clear of bottom UI)
-            img_w, img_h = img_clip.size
-            x = (self.width - img_w) // 2
-            y = max(int(self.height * 0.08), (self.height - img_h) // 2 - int(self.height * 0.05))
-
-            return img_clip.with_position((x, y))
+            if seg_type == "title":
+                # Scale to fit width, pin to top of screen
+                img_w, img_h = img_clip.size
+                target_w = int(self.width * self.screenshot_scale)
+                if img_w > target_w:
+                    img_clip = img_clip.resized(target_w / img_w)
+                img_w, img_h = img_clip.size
+                x = (self.width - img_w) // 2
+                y = int(self.height * 0.04)   # ~4% from top
+                return img_clip.with_position((x, y))
+            else:
+                # Full-canvas transparent overlay
+                return img_clip.with_position((0, 0))
 
         except Exception as e:
-            console.print(f"  [yellow]Screenshot clip error: {e}[/yellow]")
+            console.print(f"  [yellow]Card clip error: {e}[/yellow]")
             return None
 
     def _create_progress_bar(self, total_duration: float) -> VideoClip:
@@ -279,6 +273,8 @@ class VideoComposer:
                 font_path=self.font_path,
                 title_font_size=self.title_font_size,
                 comment_font_size=self.comment_font_size,
+                video_width=self.width,
+                video_height=self.height,
             )
 
             # ── Step 2: Load audio and calculate timing ──
@@ -322,11 +318,12 @@ class VideoComposer:
             for start, audio_dur, display_dur, seg in timing_info:
                 card_path = seg.get("card_path")
                 clamped_display = min(display_dur, total_duration - start)
-                clip = self._create_screenshot_clip(card_path, max(clamped_display, audio_dur))
+                clip = self._create_screenshot_clip(
+                    card_path, max(clamped_display, audio_dur),
+                    seg_type=seg.get("type", "comment"),
+                )
 
                 if clip:
-                    # Fade in comment cards only — title card starts at t=0
-                    # so CrossFadeIn would make it invisible at video open
                     if start > 0:
                         clip = clip.with_effects([CrossFadeIn(fade_in)])
                     clip = clip.with_start(start)
@@ -366,7 +363,7 @@ class VideoComposer:
             # ── Step 7: Render ──
             if output_filename is None:
                 from utils.text_cleaner import sanitize_filename
-                output_filename = sanitize_filename(f"roblox_{post.id}_{post.title[:40]}")
+                output_filename = sanitize_filename(post.title[:80])
 
             output_path = os.path.join(self.output_dir, f"{output_filename}.mp4")
 

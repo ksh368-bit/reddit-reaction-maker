@@ -51,9 +51,11 @@ def capture_post_screenshots(
     from video.card_renderer import render_cards_for_post
     return render_cards_for_post(
         post, segments, output_dir,
+        video_width=kwargs.get("video_width", 1080),
+        video_height=kwargs.get("video_height", 1920),
         font_path=kwargs.get("font_path"),
-        title_font_size=kwargs.get("title_font_size", 48),
-        comment_font_size=kwargs.get("comment_font_size", 40),
+        title_font_size=kwargs.get("title_font_size", 52),
+        comment_font_size=kwargs.get("comment_font_size", 165),
     )
 
 

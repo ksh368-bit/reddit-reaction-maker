@@ -175,18 +175,40 @@ class RedditScraper:
         """
         Fetch top posts from the configured subreddit using .json endpoint.
 
+        Auto-expands time filter if no new posts are found:
+        week → month → year → all
+
         Args:
-            time_filter: Time filter for top posts (hour, day, week, month, year, all)
+            time_filter: Starting time filter (hour, day, week, month, year, all)
 
         Returns:
             List of RedditPost objects with their top comments
         """
+        fallback_filters = ["week", "month", "year", "all"]
+        if time_filter in fallback_filters:
+            start_idx = fallback_filters.index(time_filter)
+            filters_to_try = fallback_filters[start_idx:]
+        else:
+            filters_to_try = [time_filter]
+
+        for tf in filters_to_try:
+            posts = self._fetch_posts_with_filter(tf)
+            if posts:
+                return posts
+            console.print(
+                f"  [yellow]No new posts for time_filter='{tf}', trying broader range...[/yellow]"
+            )
+
+        return []
+
+    def _fetch_posts_with_filter(self, time_filter: str) -> list[RedditPost]:
+        """Internal: fetch posts for a specific time filter."""
         history = self._load_history()
         posts = []
 
         console.print(
             f"[cyan]Fetching posts from r/{self.subreddit_name} "
-            f"(no API key needed)...[/cyan]"
+            f"(time={time_filter})...[/cyan]"
         )
 
         # Fetch subreddit top posts via .json

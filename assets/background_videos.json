@@ -1,30 +1,53 @@
 {
-  "__comment": "Background videos for Roblox Shorts. Uses yt-dlp to auto-download.",
-  "__note": "Use 'No Commentary Gameplay' videos to minimize copyright risk.",
+  "__comment": "Satisfying craft/making background videos. Auto-downloaded via yt-dlp.",
   "videos": {
-    "roblox-parkour": {
-      "url": "https://www.youtube.com/watch?v=N1nnCsqS8vg",
-      "filename": "roblox-parkour.mp4",
-      "credit": "No Copyright Gameplay for TikTok & YouTube",
-      "game": "Roblox Parkour"
+    "cement-work": {
+      "url": "https://www.youtube.com/watch?v=4f6E-DtFQEA",
+      "filename": "cement-work.mp4",
+      "credit": "Silent Builder",
+      "game": "Cement Work ASMR"
     },
-    "roblox-obby": {
-      "url": "https://www.youtube.com/watch?v=CVfvNKp_C8A",
-      "filename": "roblox-obby.mp4",
-      "credit": "Copyright-Free Gameplay (Vertical)",
-      "game": "Roblox Obby"
+    "sand-art": {
+      "url": "https://www.youtube.com/watch?v=aNU4AnLxK8c",
+      "filename": "sand-art.mp4",
+      "credit": "Rangoli by jyoti Rathod",
+      "game": "Sand Art"
     },
-    "minecraft-parkour": {
-      "url": "https://www.youtube.com/watch?v=n_Dv4JMiwK8",
-      "filename": "minecraft-parkour.mp4",
-      "credit": "bbswitzer",
-      "game": "Minecraft Parkour"
+    "slime-making": {
+      "url": "https://www.youtube.com/watch?v=yuFwErfsnTM",
+      "filename": "slime-making.mp4",
+      "credit": "Talisa Tossell",
+      "game": "Slime ASMR"
     },
-    "subway-surfers": {
-      "url": "https://www.youtube.com/watch?v=Xo16J6fT1bE",
-      "filename": "subway-surfers.mp4",
-      "credit": "No Commentary | Copyright-Free",
-      "game": "Subway Surfers"
+    "clay-pottery": {
+      "url": "https://www.youtube.com/watch?v=Ra8IqJgn1jo",
+      "filename": "clay-pottery.mp4",
+      "credit": "Beyond the Clay Wall",
+      "game": "Clay Pottery ASMR"
+    },
+    "soap-cutting": {
+      "url": "https://www.youtube.com/watch?v=24QXdeS3iEg",
+      "filename": "soap-cutting.mp4",
+      "credit": "Mary magic ASMR",
+      "game": "Soap Cutting ASMR"
+    },
+    "kinetic-sand": {
+      "url": "https://www.youtube.com/watch?v=3-2h_NL5RCw",
+      "filename": "kinetic-sand.mp4",
+      "credit": "Sand Tastic",
+      "game": "Kinetic Sand ASMR"
+    },
+    "food-prep": {
+      "url": "https://www.youtube.com/watch?v=OhQiyyTuzXA",
+      "filename": "food-prep.mp4",
+      "credit": "Zach Choi ASMR",
+      "game": "Food Prep ASMR"
+    },
+    "paper-cutting": {
+      "url": "https://www.youtube.com/watch?v=m43DO0WCND4",
+      "filename": "paper-cutting.mp4",
+      "credit": "ENGB Satisfaction Dose",
+      "game": "Paper Cutting ASMR"
     }
   }
 }
