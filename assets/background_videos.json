@@ -1,53 +1,41 @@
 {
-  "__comment": "Satisfying craft/making background videos. Auto-downloaded via yt-dlp.",
+  "__comment": "Gameplay background videos for Reddit Shorts. High-motion keeps viewers engaged.",
   "videos": {
-    "cement-work": {
-      "url": "https://www.youtube.com/watch?v=4f6E-DtFQEA",
-      "filename": "cement-work.mp4",
-      "credit": "Silent Builder",
-      "game": "Cement Work ASMR"
+    "subway-surfers-1": {
+      "url": "https://www.youtube.com/watch?v=Xo16J6fT1bE",
+      "filename": "subway-surfers-1.mp4",
+      "credit": "No Commentary | Copyright-Free",
+      "game": "Subway Surfers"
     },
-    "sand-art": {
-      "url": "https://www.youtube.com/watch?v=aNU4AnLxK8c",
-      "filename": "sand-art.mp4",
-      "credit": "Rangoli by jyoti Rathod",
-      "game": "Sand Art"
+    "subway-surfers-2": {
+      "url": "https://www.youtube.com/watch?v=4muYkuRCt20",
+      "filename": "subway-surfers-2.mp4",
+      "credit": "No Commentary Gameplay",
+      "game": "Subway Surfers"
     },
-    "slime-making": {
-      "url": "https://www.youtube.com/watch?v=yuFwErfsnTM",
-      "filename": "slime-making.mp4",
-      "credit": "Talisa Tossell",
-      "game": "Slime ASMR"
+    "minecraft-parkour-1": {
+      "url": "https://www.youtube.com/watch?v=n_Dv4JMiwK8",
+      "filename": "minecraft-parkour-1.mp4",
+      "credit": "bbswitzer",
+      "game": "Minecraft Parkour"
     },
-    "clay-pottery": {
-      "url": "https://www.youtube.com/watch?v=Ra8IqJgn1jo",
-      "filename": "clay-pottery.mp4",
-      "credit": "Beyond the Clay Wall",
-      "game": "Clay Pottery ASMR"
+    "minecraft-parkour-2": {
+      "url": "https://www.youtube.com/watch?v=FgGCCuFvyl8",
+      "filename": "minecraft-parkour-2.mp4",
+      "credit": "No Commentary Minecraft",
+      "game": "Minecraft Parkour"
     },
-    "soap-cutting": {
-      "url": "https://www.youtube.com/watch?v=24QXdeS3iEg",
-      "filename": "soap-cutting.mp4",
-      "credit": "Mary magic ASMR",
-      "game": "Soap Cutting ASMR"
+    "roblox-parkour": {
+      "url": "https://www.youtube.com/watch?v=N1nnCsqS8vg",
+      "filename": "roblox-parkour.mp4",
+      "credit": "No Copyright Gameplay for TikTok & YouTube",
+      "game": "Roblox Parkour"
     },
-    "kinetic-sand": {
-      "url": "https://www.youtube.com/watch?v=3-2h_NL5RCw",
-      "filename": "kinetic-sand.mp4",
-      "credit": "Sand Tastic",
-      "game": "Kinetic Sand ASMR"
-    },
-    "food-prep": {
-      "url": "https://www.youtube.com/watch?v=OhQiyyTuzXA",
-      "filename": "food-prep.mp4",
-      "credit": "Zach Choi ASMR",
-      "game": "Food Prep ASMR"
-    },
-    "paper-cutting": {
-      "url": "https://www.youtube.com/watch?v=m43DO0WCND4",
-      "filename": "paper-cutting.mp4",
-      "credit": "ENGB Satisfaction Dose",
-      "game": "Paper Cutting ASMR"
+    "geometry-dash": {
+      "url": "https://www.youtube.com/watch?v=StCRMEBERXM",
+      "filename": "geometry-dash.mp4",
+      "credit": "No Commentary Geometry Dash",
+      "game": "Geometry Dash"
     }
   }
 }

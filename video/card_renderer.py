@@ -219,7 +219,65 @@ def render_title_card(
 
 
 # ──────────────────────────────────────────────
-#  2. Bold text overlay  (comment segments)
+#  2. Opening hook card  (first frame, 0-3s)
+# ──────────────────────────────────────────────
+
+def render_hook_card(
+    title: str,
+    video_width: int = 1080,
+    video_height: int = 1920,
+    font_path: str | None = None,
+) -> Image.Image:
+    """
+    Full-canvas RGBA overlay for the opening hook (first 0-3 seconds).
+
+    Displays the most compelling part of the title in large centered text
+    with a semi-transparent dark background strip — grabs attention before
+    the Reddit card appears.
+
+    Layout:
+      - Dark gradient strip in upper-center
+      - Large bold white text with black outline
+      - Optional accent line below text
+    """
+    img  = Image.new("RGBA", (video_width, video_height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    font_size = 120
+    font      = _load_bold_font(font_path, font_size)
+    padding   = 60
+    content_w = video_width - padding * 2
+
+    lines   = _wrap_text(draw, title, font, content_w)[:3]
+    line_h  = int(font_size * 1.45)
+    block_h = len(lines) * line_h
+
+    # Dark semi-transparent background strip
+    strip_top = video_height // 2 - block_h // 2 - 40
+    strip_h   = block_h + 80
+    strip = Image.new("RGBA", (video_width, strip_h), (0, 0, 0, 170))
+    img.paste(strip, (0, strip_top), strip)
+
+    # Text
+    y = strip_top + 40
+    for line in lines:
+        bbox = draw.textbbox((0, 0), line, font=font)
+        lw = bbox[2] - bbox[0]
+        x  = (video_width - lw) // 2 - bbox[0]
+        draw.text((x, y), line, font=font, fill=WHITE,
+                  stroke_width=4, stroke_fill=BLACK)
+        y += line_h
+
+    # Orange accent line below text
+    line_y = strip_top + strip_h - 8
+    draw.rectangle([padding, line_y, video_width - padding, line_y + 5],
+                   fill=(255, 69, 0, 220))
+
+    return img
+
+
+# ──────────────────────────────────────────────
+#  3. Bold text overlay  (comment segments)
 # ──────────────────────────────────────────────
 
 def render_comment_card(
@@ -284,6 +342,57 @@ def render_comment_card(
             draw.text((x, y), line, font=font, fill=WHITE,
                       stroke_width=5, stroke_fill=BLACK)
             y += line_h
+
+    return img
+
+
+# ──────────────────────────────────────────────
+#  4. Word-level caption overlay
+# ──────────────────────────────────────────────
+
+def render_word_caption(
+    word: str,
+    video_width: int = 1080,
+    video_height: int = 1920,
+    font_path: str | None = None,
+    font_size: int = 165,
+) -> Image.Image:
+    """
+    Full-canvas RGBA overlay showing a single word in black rounded-rect box.
+    Used for word-by-word caption sync with edge-tts WordBoundary events.
+
+    Same visual style as the keyword box in render_comment_card.
+    """
+    img  = Image.new("RGBA", (video_width, video_height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    text    = word.upper()
+    kw_font = _load_bold_font(font_path, font_size)
+
+    kb   = draw.textbbox((0, 0), text, font=kw_font)
+    tw   = kb[2] - kb[0]
+    th   = kb[3] - kb[1]
+    h_pad, v_pad = 52, 32
+    box_w = tw + h_pad * 2
+    box_h = th + v_pad * 2
+
+    # Cap box width to 90% of frame
+    if box_w > video_width * 0.9:
+        scale   = (video_width * 0.9) / box_w
+        kw_font = _load_bold_font(font_path, int(font_size * scale))
+        kb   = draw.textbbox((0, 0), text, font=kw_font)
+        tw   = kb[2] - kb[0]
+        th   = kb[3] - kb[1]
+        box_w = tw + h_pad * 2
+        box_h = th + v_pad * 2
+
+    bx = (video_width  - box_w) // 2
+    by = video_height  // 2 - box_h // 2
+
+    draw.rounded_rectangle([bx, by, bx + box_w, by + box_h],
+                            radius=24, fill=(0, 0, 0, 220))
+    draw.text((bx + h_pad - kb[0], by + v_pad - kb[1]),
+              text, font=kw_font, fill=WHITE)
 
     return img
 

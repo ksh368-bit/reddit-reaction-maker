@@ -315,6 +315,28 @@ class VideoComposer:
             overlay_clips = []
             fade_in = 0.15  # seconds — quick fade-in to soften hard cuts
 
+            # ── Hook overlay: shown for the first segment's duration ──
+            if timing_info:
+                hook_duration = timing_info[0][2]  # display_dur of first segment
+                hook_duration = min(hook_duration, 3.0)  # cap at 3s
+                try:
+                    from video.card_renderer import render_hook_card
+                    from PIL import Image as _PILImage
+                    hook_img = render_hook_card(
+                        post.title,
+                        video_width=self.width,
+                        video_height=self.height,
+                        font_path=self.font_path,
+                    )
+                    hook_path = os.path.join(cards_dir, "_hook.png")
+                    os.makedirs(cards_dir, exist_ok=True)
+                    hook_img.save(hook_path, "PNG")
+                    hook_clip = ImageClip(hook_path, duration=hook_duration)
+                    hook_clip = hook_clip.with_position((0, 0)).with_start(0)
+                    overlay_clips.append(hook_clip)
+                except Exception as e:
+                    console.print(f"  [yellow]Hook card error: {e}[/yellow]")
+
             for start, audio_dur, display_dur, seg in timing_info:
                 card_path = seg.get("card_path")
                 clamped_display = min(display_dur, total_duration - start)

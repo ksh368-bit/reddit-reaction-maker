@@ -13,6 +13,32 @@ from rich.console import Console
 console = Console()
 
 
+def split_into_word_segments(word_boundary_events: list[dict]) -> list[dict]:
+    """
+    Convert edge-tts WordBoundary events into word-timing segments.
+
+    Each event has:
+      {"type": "WordBoundary", "offset": <100ns ticks>, "duration": <100ns ticks>, "text": "<word>"}
+
+    Returns list of:
+      {"word": str, "start_time": float (seconds), "end_time": float (seconds)}
+    """
+    TICKS_PER_SEC = 10_000_000  # edge-tts uses 100-nanosecond ticks
+
+    segments = []
+    for event in word_boundary_events:
+        if event.get("type") != "WordBoundary":
+            continue
+        word = event.get("text", "").strip()
+        if not word:
+            continue
+        start = event["offset"] / TICKS_PER_SEC
+        end   = (event["offset"] + event["duration"]) / TICKS_PER_SEC
+        segments.append({"word": word, "start_time": start, "end_time": end})
+
+    return segments
+
+
 class TTSProvider(ABC):
     """Base class for TTS providers."""
 
