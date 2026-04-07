@@ -151,10 +151,11 @@ class VideoComposer:
             if img_h > max_h:
                 img_clip = img_clip.resized(max_h / img_h)
 
-            # Position: horizontally centered, 10% from top
+            # Position: horizontally centered, vertically centered in upper half
+            # 30% from top puts card in the visual sweet spot (clear of bottom UI)
             img_w, img_h = img_clip.size
             x = (self.width - img_w) // 2
-            y = int(self.height * 0.10)
+            y = max(int(self.height * 0.08), (self.height - img_h) // 2 - int(self.height * 0.05))
 
             return img_clip.with_position((x, y))
 

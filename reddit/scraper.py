@@ -83,6 +83,7 @@ class RedditScraper:
         self.min_upvotes = reddit_cfg.get("min_upvotes", 100)
         self.min_comments_count = reddit_cfg.get("min_comments", 10)
         self.max_comment_length = reddit_cfg.get("max_comment_length", 500)
+        self.min_comment_score = reddit_cfg.get("min_comment_score", 0)
         self.top_comments = reddit_cfg.get("top_comments", 5)
         self.history_file = config.get("output", {}).get(
             "history_file", "output/history.json"
@@ -150,17 +151,19 @@ class RedditScraper:
             body = data.get("body", "").strip()
             author = data.get("author", "Anonymous")
 
+            score = data.get("score", 0)
             if (
                 body
                 and body not in ("[deleted]", "[removed]")
                 and len(body) <= self.max_comment_length
                 and author not in ("[deleted]", "AutoModerator")
+                and score >= self.min_comment_score
             ):
                 comments.append(Comment(
                     id=data.get("id", ""),
                     author=author,
                     body=body,
-                    score=data.get("score", 0),
+                    score=score,
                 ))
 
             if len(comments) >= self.top_comments:
