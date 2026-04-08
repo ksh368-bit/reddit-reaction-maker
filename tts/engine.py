@@ -296,6 +296,7 @@ class TTSEngine:
         """
         segments = []
         os.makedirs(temp_dir, exist_ok=True)
+        use_karaoke = isinstance(self.provider, EdgeTTS)
 
         # Title
         title_path = os.path.join(temp_dir, "title.mp3")
@@ -307,23 +308,31 @@ class TTSEngine:
                 "type": "title",
             })
 
-        # Body (if exists and is short enough)
+        # Body (always included — generate_audio handles truncation via max_chars)
         if post.body and len(post.body.strip()) > 0:
             body_text = post.body.strip()
-            if len(body_text) <= 300:  # Only include short bodies
-                body_path = os.path.join(temp_dir, "body.mp3")
-                result = self.generate_audio(body_text, body_path)
-                if result:
-                    segments.append({
-                        "text": self.clean_text(body_text),
-                        "audio_path": result,
-                        "type": "body",
-                    })
+            body_path = os.path.join(temp_dir, "body.mp3")
+            result = self.generate_audio(
+                body_text, body_path, capture_boundaries=use_karaoke
+            )
+            if result is not None:
+                if use_karaoke and isinstance(result, tuple):
+                    audio_path_b, word_events_b = result
+                    word_segments_b = split_into_word_segments(word_events_b)
+                else:
+                    audio_path_b = result
+                    word_segments_b = []
+                if not word_segments_b:
+                    cleaned_b = self.clean_text(body_text)
+                    word_segments_b = estimate_word_segments(audio_path_b, cleaned_b)
+                segments.append({
+                    "text": self.clean_text(body_text),
+                    "audio_path": audio_path_b,
+                    "type": "body",
+                    "word_segments": word_segments_b,
+                })
 
         # Comments — capture word boundaries for karaoke captions.
-        # edge-tts 7.x no longer emits WordBoundary events, so we always
-        # fall back to estimated timing from audio duration.
-        use_karaoke = isinstance(self.provider, EdgeTTS)
         for i, comment in enumerate(post.comments):
             comment_path = os.path.join(temp_dir, f"comment_{i}.mp3")
             result = self.generate_audio(
