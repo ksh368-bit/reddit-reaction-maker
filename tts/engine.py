@@ -87,15 +87,30 @@ def estimate_word_segments(
         # Rough estimate: ~3 words/second at +20% speed
         total_duration = len(words) / 3.0
 
-    # Proportional timing by syllable count — much closer to actual TTS cadence
-    # than character count (TTS spends ~equal time per syllable, not per char)
+    # --- Step 1: syllable-proportional base durations ---
     syllable_counts = [count_syllables(w) for w in words]
     total_syllables = sum(syllable_counts)
+    base_durations = [(syl / total_syllables) * total_duration
+                      for syl in syllable_counts]
+
+    # --- Step 2: punctuation pause bonus ---
+    # TTS pauses naturally after clause-ending punctuation; add extra time
+    PUNCT_BONUS = 0.12   # seconds added for words ending in , . ! ?
+    punct_bonus = [PUNCT_BONUS if w[-1] in ",.!?" else 0.0 for w in words]
+
+    # --- Step 3: minimum floor so highlight is always perceptible ---
+    MIN_DUR = 0.18       # ~5 frames at 30fps — minimum to register a highlight
+    raw_durations = [max(MIN_DUR, b + p)
+                     for b, p in zip(base_durations, punct_bonus)]
+
+    # --- Step 4: rescale to preserve total_duration exactly ---
+    raw_total = sum(raw_durations)
+    scale = total_duration / raw_total if raw_total > 0 else 1.0
+    final_durations = [d * scale for d in raw_durations]
 
     segments = []
     t = 0.0
-    for word, syl in zip(words, syllable_counts):
-        dur = (syl / total_syllables) * total_duration
+    for word, dur in zip(words, final_durations):
         segments.append({
             "word": word,
             "start_time": round(t, 4),
