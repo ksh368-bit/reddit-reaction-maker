@@ -11,7 +11,9 @@ max_comment_length = 400
 top_comments = 6
 
 [tts]
-engine = "gtts"
+engine = "edge-tts"
+voice = "en-US-GuyNeural"
+rate = "+20%"
 language = "en"
 slow = false
 
@@ -19,19 +21,20 @@ slow = false
 width = 1080
 height = 1920
 fps = 30
-max_duration = 58
+max_duration = 55
 background_dir = "assets/backgrounds"
-font = "assets/fonts/NotoSansKR-Bold.ttf"
+font = "assets/fonts/Montserrat-Bold.ttf"
 title_font_size = 52
-comment_font_size = 42
+comment_font_size = 165
 text_color = "white"
 text_stroke_color = "black"
 text_stroke_width = 3
 watermark = "r/Steam"
-opacity = 0.7
+opacity = 0.45
 screenshot_scale = 0.90
 bgm_enabled = true
-bgm_volume = 0.12
+bgm_volume = 0.08
+min_comment_score = 50
 
 [output]
 dir = "output/steam"
