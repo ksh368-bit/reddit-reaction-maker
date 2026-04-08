@@ -402,7 +402,7 @@ def render_caption_chunk(
     video_width: int = 1080,
     video_height: int = 1920,
     font_path: str | None = None,
-    font_size: int = 100,
+    font_size: int = 85,
 ) -> Image.Image:
     """
     Full-canvas RGBA overlay showing 3 words as a chunk (MrBeast/viral style).

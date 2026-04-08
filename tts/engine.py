@@ -13,6 +13,64 @@ from rich.console import Console
 console = Console()
 
 
+def estimate_word_segments(
+    audio_path: str | None,
+    text: str,
+    fallback_duration: float = 0.0,
+) -> list[dict]:
+    """
+    Estimate per-word timing from audio duration + character proportions.
+
+    Used when edge-tts WordBoundary events are unavailable (edge-tts 7.x
+    no longer emits WordBoundary — only SentenceBoundary).
+
+    Timing is proportional to each word's character count: longer words
+    get more time, approximating natural speech cadence.
+
+    Args:
+        audio_path: Path to generated MP3 (read for actual duration).
+                    Pass None to use fallback_duration.
+        text: The text that was spoken.
+        fallback_duration: Duration to use when audio_path is None or unreadable.
+
+    Returns:
+        List of {word, start_time, end_time} dicts.
+    """
+    words = text.split()
+    if not words:
+        return []
+
+    total_duration = fallback_duration
+    if audio_path and Path(audio_path).exists():
+        try:
+            from moviepy import AudioFileClip
+            with AudioFileClip(audio_path) as ac:
+                total_duration = ac.duration
+        except Exception:
+            pass
+
+    if total_duration <= 0:
+        # Rough estimate: ~3 words/second at +20% speed
+        total_duration = len(words) / 3.0
+
+    # Proportional timing by character count
+    char_counts = [max(1, len(w)) for w in words]
+    total_chars = sum(char_counts)
+
+    segments = []
+    t = 0.0
+    for word, chars in zip(words, char_counts):
+        dur = (chars / total_chars) * total_duration
+        segments.append({
+            "word": word,
+            "start_time": round(t, 4),
+            "end_time":   round(t + dur, 4),
+        })
+        t += dur
+
+    return segments
+
+
 def split_into_word_segments(word_boundary_events: list[dict]) -> list[dict]:
     """
     Convert edge-tts WordBoundary events into word-timing segments.
@@ -262,7 +320,9 @@ class TTSEngine:
                         "type": "body",
                     })
 
-        # Comments — capture word boundaries for karaoke captions
+        # Comments — capture word boundaries for karaoke captions.
+        # edge-tts 7.x no longer emits WordBoundary events, so we always
+        # fall back to estimated timing from audio duration.
         use_karaoke = isinstance(self.provider, EdgeTTS)
         for i, comment in enumerate(post.comments):
             comment_path = os.path.join(temp_dir, f"comment_{i}.mp3")
@@ -277,6 +337,12 @@ class TTSEngine:
             else:
                 audio_path = result
                 word_segments = []
+
+            # If WordBoundary events were empty (edge-tts 7.x), use estimated timing
+            if not word_segments:
+                cleaned = self.clean_text(comment.body)
+                word_segments = estimate_word_segments(audio_path, cleaned)
+
             segments.append({
                 "text": self.clean_text(comment.body),
                 "audio_path": audio_path,
