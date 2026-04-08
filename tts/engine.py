@@ -226,6 +226,19 @@ class TTSEngine:
         console.print(f"[cyan]TTS Engine: {self.provider.name()}[/cyan]")
 
     @classmethod
+    def prepare_tts_text(cls, text: str, max_chars: int = 500) -> str:
+        """
+        Return the exact text that will be sent to TTS (cleaned + truncated).
+
+        This is the single source of truth for what TTS reads — use it
+        whenever building word_segments so screen text matches audio exactly.
+        """
+        cleaned = cls.clean_text(text)
+        if len(cleaned) > max_chars:
+            cleaned = cleaned[:max_chars].rsplit(" ", 1)[0] + "..."
+        return cleaned
+
+    @classmethod
     def clean_text(cls, text: str) -> str:
         """Clean text for TTS: remove emojis, URLs, excessive whitespace."""
         # Remove URLs
@@ -260,14 +273,10 @@ class TTSEngine:
             The output path if successful (or (path, events) if capture_boundaries),
             None otherwise.
         """
-        cleaned = self.clean_text(text)
+        cleaned = self.prepare_tts_text(text, max_chars)
         if not cleaned:
             console.print("[yellow]  Skipped empty text segment[/yellow]")
             return None
-
-        # Truncate if too long
-        if len(cleaned) > max_chars:
-            cleaned = cleaned[:max_chars].rsplit(" ", 1)[0] + "..."
 
         try:
             Path(output_path).parent.mkdir(parents=True, exist_ok=True)
@@ -322,11 +331,11 @@ class TTSEngine:
                 else:
                     audio_path_b = result
                     word_segments_b = []
+                tts_text_b = self.prepare_tts_text(body_text)
                 if not word_segments_b:
-                    cleaned_b = self.clean_text(body_text)
-                    word_segments_b = estimate_word_segments(audio_path_b, cleaned_b)
+                    word_segments_b = estimate_word_segments(audio_path_b, tts_text_b)
                 segments.append({
-                    "text": self.clean_text(body_text),
+                    "text": tts_text_b,
                     "audio_path": audio_path_b,
                     "type": "body",
                     "word_segments": word_segments_b,
@@ -347,13 +356,13 @@ class TTSEngine:
                 audio_path = result
                 word_segments = []
 
+            tts_text_c = self.prepare_tts_text(comment.body)
             # If WordBoundary events were empty (edge-tts 7.x), use estimated timing
             if not word_segments:
-                cleaned = self.clean_text(comment.body)
-                word_segments = estimate_word_segments(audio_path, cleaned)
+                word_segments = estimate_word_segments(audio_path, tts_text_c)
 
             segments.append({
-                "text": self.clean_text(comment.body),
+                "text": tts_text_c,
                 "audio_path": audio_path,
                 "type": "comment",
                 "author": comment.author,
