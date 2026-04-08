@@ -425,13 +425,12 @@ class VideoComposer:
             overlay_clips = []
             fade_in = 0.15  # seconds — quick fade-in to soften hard cuts
 
-            # ── Hook overlay: shown for the first segment's duration ──
+            # ── Hook overlay: t=0 → hook_duration (BEFORE Reddit card appears) ──
+            hook_duration = 0.0
             if timing_info:
-                hook_duration = timing_info[0][2]  # display_dur of first segment
-                hook_duration = min(hook_duration, 3.0)  # cap at 3s
+                hook_duration = min(timing_info[0][2], 3.0)  # cap at 3s
                 try:
                     from video.card_renderer import render_hook_card
-                    from PIL import Image as _PILImage
                     hook_img = render_hook_card(
                         post.title,
                         video_width=self.width,
@@ -471,15 +470,21 @@ class VideoComposer:
                     )
                     if clip:
                         effects = []
-                        if start > 0:
+                        # Title card starts AFTER hook ends — prevents overlap
+                        # Hook: t=0→hook_duration  /  Title card: t=hook_duration→end
+                        if seg.get("type") == "title":
+                            clip_start = hook_duration
+                            clip_dur = max(clip_dur - hook_duration, audio_dur)
                             effects.append(CrossFadeIn(fade_in))
-                        # Title card fades out at the end so screen clears
-                        # for karaoke captions (research: card shown 5-10s then gone)
-                        if seg.get("type") == "title" and clip_dur > 1.0:
-                            effects.append(FadeOut(min(0.5, clip_dur * 0.2)))
+                            if clip_dur > 1.0:
+                                effects.append(FadeOut(min(0.5, clip_dur * 0.2)))
+                        else:
+                            clip_start = start
+                            if start > 0:
+                                effects.append(CrossFadeIn(fade_in))
                         if effects:
                             clip = clip.with_effects(effects)
-                        clip = clip.with_start(start)
+                        clip = clip.with_start(clip_start)
                         overlay_clips.append(clip)
 
             # ── Step 5: Compose all layers ──
