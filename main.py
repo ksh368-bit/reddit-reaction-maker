@@ -30,6 +30,7 @@ from rich.table import Table
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from utils.config_loader import load_config
+from utils.meta_generator import MetaGenerator
 from reddit.scraper import RedditScraper, TextFileScraper
 from tts.engine import TTSEngine
 from video.composer import VideoComposer
@@ -73,9 +74,11 @@ def process_post(post, tts_engine: TTSEngine, composer: VideoComposer, scraper) 
             console.print("  [red]Video composition failed. Skipping.[/red]")
             return None
 
-        # Step 3: Save to history
-        console.print("  [cyan][3/3] Updating history...[/cyan]")
+        # Step 3: Save meta + history
+        console.print("  [cyan][3/3] Updating history & saving meta...[/cyan]")
         scraper.save_to_history(post.id)
+        meta_path = MetaGenerator.save_meta(post, output_path)
+        console.print(f"  [dim]Meta: {os.path.basename(meta_path)}[/dim]")
 
         return output_path
 
