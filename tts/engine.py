@@ -13,6 +13,40 @@ from rich.console import Console
 console = Console()
 
 
+def count_syllables(word: str) -> int:
+    """
+    Estimate syllable count for a word — correlates with TTS speech duration.
+
+    Uses vowel-group counting: each cluster of consecutive vowels = 1 syllable.
+    Silent trailing 'e' is not counted. Minimum 1 syllable per word.
+
+    This is far more accurate than character count for proportional
+    word-timing estimation.
+    """
+    word = word.lower().strip(".,!?;:\"'()-")
+    if not word:
+        return 1
+
+    vowels = "aeiouy"
+    count = 0
+    prev_vowel = False
+    for ch in word:
+        is_vowel = ch in vowels
+        if is_vowel and not prev_vowel:
+            count += 1
+        prev_vowel = is_vowel
+
+    # Silent trailing 'e' — subtract if word ends in vowel-consonant-e
+    if (len(word) > 2
+            and word[-1] == "e"
+            and word[-2] not in vowels
+            and word[-3] in vowels
+            and count > 1):
+        count -= 1
+
+    return max(1, count)
+
+
 def estimate_word_segments(
     audio_path: str | None,
     text: str,
@@ -53,14 +87,15 @@ def estimate_word_segments(
         # Rough estimate: ~3 words/second at +20% speed
         total_duration = len(words) / 3.0
 
-    # Proportional timing by character count
-    char_counts = [max(1, len(w)) for w in words]
-    total_chars = sum(char_counts)
+    # Proportional timing by syllable count — much closer to actual TTS cadence
+    # than character count (TTS spends ~equal time per syllable, not per char)
+    syllable_counts = [count_syllables(w) for w in words]
+    total_syllables = sum(syllable_counts)
 
     segments = []
     t = 0.0
-    for word, chars in zip(words, char_counts):
-        dur = (chars / total_chars) * total_duration
+    for word, syl in zip(words, syllable_counts):
+        dur = (syl / total_syllables) * total_duration
         segments.append({
             "word": word,
             "start_time": round(t, 4),
