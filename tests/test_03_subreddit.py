@@ -20,6 +20,7 @@ HIGH_EMOTION_SUBREDDITS = {
     "prorevenge",
     "entitledparents",
     "nuclearrevenge",
+    "relationship_advice",
 }
 
 
@@ -50,3 +51,30 @@ def test_scraper_not_roblox(base_config):
     assert sub != "roblox", (
         "subreddit is still 'roblox' — change to a high-emotion sub for better virality"
     )
+
+
+def test_config_has_subreddits_rotation_list():
+    """config.toml must have a subreddits list with multiple high-emotion subs."""
+    from utils.config_loader import load_config
+    config = load_config("config.toml")
+    subs = config.get("reddit", {}).get("subreddits", [])
+    assert len(subs) >= 3, f"subreddits list has only {len(subs)} entries — add more high-emotion subs"
+    for s in subs:
+        assert s.lower() in HIGH_EMOTION_SUBREDDITS, (
+            f"'{s}' in subreddits list is not a recognized high-emotion subreddit"
+        )
+
+
+def test_scraper_picks_from_subreddits_list():
+    """RedditScraper picks a subreddit from the subreddits rotation list."""
+    from reddit.scraper import RedditScraper
+    config = {
+        "reddit": {
+            "subreddits": ["AmItheAsshole", "tifu", "pettyrevenge"],
+            "post_limit": 1, "min_upvotes": 0, "min_comments": 0,
+            "max_comment_length": 500, "min_comment_score": 0, "top_comments": 1,
+        },
+        "output": {"history_file": "output/history.json"},
+    }
+    scraper = RedditScraper(config)
+    assert scraper.subreddit_name.lower() in {s.lower() for s in config["reddit"]["subreddits"]}

@@ -1,7 +1,8 @@
-"""Reddit r/roblox scraper using .json endpoints (no API key required)."""
+"""Reddit scraper using .json endpoints (no API key required)."""
 
 import json
 import os
+import random
 import time
 import hashlib
 from dataclasses import dataclass, field
@@ -78,7 +79,11 @@ class RedditScraper:
 
     def __init__(self, config: dict):
         reddit_cfg = config.get("reddit", {})
-        self.subreddit_name = reddit_cfg.get("subreddit", "roblox")
+        subreddits = reddit_cfg.get("subreddits", [])
+        if subreddits:
+            self.subreddit_name = random.choice(subreddits)
+        else:
+            self.subreddit_name = reddit_cfg.get("subreddit", "AmItheAsshole")
         self.post_limit = reddit_cfg.get("post_limit", 5)
         self.min_upvotes = reddit_cfg.get("min_upvotes", 100)
         self.min_comments_count = reddit_cfg.get("min_comments", 10)

@@ -29,7 +29,7 @@ def base_config():
             "width": 1080,
             "height": 1920,
             "fps": 30,
-            "max_duration": 30,
+            "max_duration": 55,
             "background_dir": "assets/backgrounds",
             "font": None,
             "title_font_size": 48,

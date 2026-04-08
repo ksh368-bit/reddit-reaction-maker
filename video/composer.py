@@ -157,6 +157,53 @@ class VideoComposer:
             console.print(f"  [yellow]Card clip error: {e}[/yellow]")
             return None
 
+    def _add_karaoke_clips(
+        self,
+        overlay_clips: list,
+        word_segs: list[dict],
+        seg_start: float,
+        audio_dur: float,
+        total_duration: float,
+        fade_in: float,
+    ):
+        """
+        Add per-word caption clips to overlay_clips for karaoke-style display.
+
+        Each word is shown as a full-canvas render_word_caption overlay,
+        timed to its WordBoundary start/end from edge-tts.
+        """
+        from video.card_renderer import render_word_caption
+        import tempfile, os
+
+        tmp_dir = tempfile.mkdtemp(prefix="karaoke_")
+        try:
+            for i, ws in enumerate(word_segs):
+                word_start = seg_start + ws["start_time"]
+                word_end   = seg_start + ws["end_time"]
+
+                if word_start >= total_duration:
+                    break
+                word_end = min(word_end, total_duration)
+                dur = max(word_end - word_start, 0.05)
+
+                img = render_word_caption(
+                    ws["word"],
+                    video_width=self.width,
+                    video_height=self.height,
+                    font_path=self.font_path,
+                )
+                img_path = os.path.join(tmp_dir, f"word_{i:04d}.png")
+                img.save(img_path, "PNG")
+
+                clip = ImageClip(img_path, duration=dur).with_position((0, 0))
+                if word_start > 0:
+                    clip = clip.with_effects([CrossFadeIn(min(fade_in, dur * 0.3))])
+                clip = clip.with_start(word_start)
+                overlay_clips.append(clip)
+        except Exception as e:
+            console.print(f"  [yellow]Karaoke clip error: {e}[/yellow]")
+        # Note: tmp_dir cleaned up by OS eventually; small PNG files
+
     def _create_progress_bar(self, total_duration: float) -> VideoClip:
         """Create a progress bar clip that fills left-to-right over total_duration."""
         bar_height = 10
@@ -340,16 +387,24 @@ class VideoComposer:
             for start, audio_dur, display_dur, seg in timing_info:
                 card_path = seg.get("card_path")
                 clamped_display = min(display_dur, total_duration - start)
-                clip = self._create_screenshot_clip(
-                    card_path, max(clamped_display, audio_dur),
-                    seg_type=seg.get("type", "comment"),
-                )
 
-                if clip:
-                    if start > 0:
-                        clip = clip.with_effects([CrossFadeIn(fade_in)])
-                    clip = clip.with_start(start)
-                    overlay_clips.append(clip)
+                word_segs = seg.get("word_segments", [])
+                if word_segs and seg.get("type") == "comment":
+                    # ── Karaoke: one word-caption clip per word ──
+                    self._add_karaoke_clips(
+                        overlay_clips, word_segs, start, audio_dur,
+                        total_duration, fade_in,
+                    )
+                else:
+                    clip = self._create_screenshot_clip(
+                        card_path, max(clamped_display, audio_dur),
+                        seg_type=seg.get("type", "comment"),
+                    )
+                    if clip:
+                        if start > 0:
+                            clip = clip.with_effects([CrossFadeIn(fade_in)])
+                        clip = clip.with_start(start)
+                        overlay_clips.append(clip)
 
             # ── Step 5: Compose all layers ──
             progress_bar = self._create_progress_bar(total_duration)

@@ -95,6 +95,32 @@ class EdgeTTS(TTSProvider):
         asyncio.run(_run())
         return output_path
 
+    def generate_with_boundaries(self, text: str, output_path: str) -> tuple[str, list[dict]]:
+        """
+        Generate speech and return (audio_path, word_boundary_events).
+
+        word_boundary_events: list of edge-tts WordBoundary dicts with
+          {type, offset (100ns ticks), duration (100ns ticks), text}
+        """
+        import edge_tts
+
+        word_events: list[dict] = []
+
+        async def _run():
+            communicate = edge_tts.Communicate(text, self.voice, rate=self.rate)
+            chunks = []
+            async for event in communicate.stream():
+                if event["type"] == "audio":
+                    chunks.append(event["data"])
+                elif event["type"] == "WordBoundary":
+                    word_events.append(event)
+            Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, "wb") as f:
+                f.write(b"".join(chunks))
+
+        asyncio.run(_run())
+        return output_path, word_events
+
 
 class TTSEngine:
     """
@@ -159,8 +185,9 @@ class TTSEngine:
         return text
 
     def generate_audio(
-        self, text: str, output_path: str, max_chars: int = 500
-    ) -> str | None:
+        self, text: str, output_path: str, max_chars: int = 500,
+        capture_boundaries: bool = False,
+    ) -> str | tuple[str, list[dict]] | None:
         """
         Generate TTS audio for a text segment.
 
@@ -168,9 +195,12 @@ class TTSEngine:
             text: The text to convert to speech
             output_path: Where to save the MP3 file
             max_chars: Maximum character limit for TTS
+            capture_boundaries: If True (and provider is EdgeTTS), also return
+                                 word boundary events as (path, events) tuple.
 
         Returns:
-            The output path if successful, None otherwise
+            The output path if successful (or (path, events) if capture_boundaries),
+            None otherwise.
         """
         cleaned = self.clean_text(text)
         if not cleaned:
@@ -183,8 +213,12 @@ class TTSEngine:
 
         try:
             Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-            self.provider.generate(cleaned, output_path)
-            return output_path
+            if capture_boundaries and isinstance(self.provider, EdgeTTS):
+                path, events = self.provider.generate_with_boundaries(cleaned, output_path)
+                return path, events
+            else:
+                self.provider.generate(cleaned, output_path)
+                return output_path
         except Exception as e:
             console.print(f"[red]TTS Error: {e}[/red]")
             return None
@@ -228,18 +262,29 @@ class TTSEngine:
                         "type": "body",
                     })
 
-        # Comments
+        # Comments — capture word boundaries for karaoke captions
+        use_karaoke = isinstance(self.provider, EdgeTTS)
         for i, comment in enumerate(post.comments):
             comment_path = os.path.join(temp_dir, f"comment_{i}.mp3")
-            result = self.generate_audio(comment.body, comment_path)
-            if result:
-                segments.append({
-                    "text": self.clean_text(comment.body),
-                    "audio_path": result,
-                    "type": "comment",
-                    "author": comment.author,
-                    "score": comment.score,
-                })
+            result = self.generate_audio(
+                comment.body, comment_path, capture_boundaries=use_karaoke
+            )
+            if result is None:
+                continue
+            if use_karaoke and isinstance(result, tuple):
+                audio_path, word_events = result
+                word_segments = split_into_word_segments(word_events)
+            else:
+                audio_path = result
+                word_segments = []
+            segments.append({
+                "text": self.clean_text(comment.body),
+                "audio_path": audio_path,
+                "type": "comment",
+                "author": comment.author,
+                "score": comment.score,
+                "word_segments": word_segments,
+            })
 
         console.print(
             f"  [green][OK][/green] Generated {len(segments)} audio segments"
