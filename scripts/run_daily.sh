@@ -21,7 +21,7 @@ run_channel() {
     local label="$2"
     echo ""
     echo "=== [$label] start: $(date '+%H:%M:%S') ==="
-    if "$PYTHON" main.py --config "$config" --limit 2; then
+    if "$PYTHON" main.py --config "$config" --limit 1; then
         echo "=== [$label] done ==="
     else
         echo "=== [$label] FAILED (exit $?) ==="
@@ -34,9 +34,9 @@ run_channel() {
     echo "Daily run: $DATE $(date '+%H:%M:%S')"
     echo "=========================================="
 
-    run_channel "config.toml"         "AITA/Reddit"
-    run_channel "config-steam.toml"   "Steam"
-    run_channel "config-manga.toml"   "Manga"
+    run_channel "config.toml"          "AITA/Reddit"
+    run_channel "config-steam.toml"    "Steam"
+    run_channel "config-manga.toml"    "Manga"
     run_channel "config-products.toml" "Products"
 
     echo ""
