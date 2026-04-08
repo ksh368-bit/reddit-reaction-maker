@@ -349,8 +349,29 @@ class TTSEngine:
 
     @classmethod
     def clean_text(cls, text: str) -> str:
-        """Clean text for TTS: remove emojis, URLs, excessive whitespace."""
-        # Remove URLs
+        """Clean text for TTS: remove emojis, URLs, preamble filler, excessive whitespace."""
+        # ── 1. Strip EDIT/UPDATE sections (everything from the marker onward) ──
+        text = re.sub(r"\bEDIT\s*\d*\s*:", "EDITMARKER", text, flags=re.IGNORECASE)
+        text = re.sub(r"\bUPDATE\s*\d*\s*:", "EDITMARKER", text, flags=re.IGNORECASE)
+        if "EDITMARKER" in text:
+            text = text[: text.index("EDITMARKER")].strip()
+
+        # ── 2. Strip filler preamble lines (line-by-line) ──
+        _PREAMBLE = re.compile(
+            r"^("
+            r"throwaway\b.*"
+            r"|long\s+post.*"
+            r"|sorry.*long\s+post.*"
+            r"|for\s+context[,.]?.*"
+            r"|not\s+sure\s+if\s+(this\s+is\s+)?the\s+right\s+place.*"
+            r")\s*$",
+            re.IGNORECASE,
+        )
+        lines = text.splitlines()
+        lines = [ln for ln in lines if not _PREAMBLE.match(ln.strip())]
+        text = "\n".join(lines)
+
+        # ── 3. Remove URLs ──
         text = re.sub(r"https?://\S+", "", text)
         # Remove Reddit-style references
         text = re.sub(r"r/\w+", "", text)
