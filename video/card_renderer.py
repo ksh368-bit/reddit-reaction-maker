@@ -405,34 +405,36 @@ def render_caption_chunk(
     font_size: int = 100,
 ) -> Image.Image:
     """
-    Full-canvas RGBA overlay showing 3-4 words as a chunk.
+    Full-canvas RGBA overlay showing 3 words as a chunk (MrBeast/viral style).
 
-    The active word (active_idx) gets a yellow/orange rounded-rect highlight
-    behind it; the other words are white with black stroke.
-
-    Position: lower-center (~65% down the frame), matching the dominant
-    format used by top Reddit Shorts channels.
+    - Active word: yellow/orange rounded-rect highlight with glow
+    - Inactive words: white text with black stroke
+    - Dark semi-transparent backing strip behind entire caption block
+      (ensures readability over any background video)
+    - Position: lower-center (~65% down frame)
     """
     img  = Image.new("RGBA", (video_width, video_height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
     font      = _load_bold_font(font_path, font_size)
-    h_gap     = 24          # horizontal gap between words
-    v_pad     = 16          # vertical padding inside highlight box
-    h_pad     = 20          # horizontal padding inside highlight box
+    h_gap     = 24
+    v_pad     = 16
+    h_pad     = 20
     line_h    = int(font_size * 1.4)
+    strip_v   = 24          # vertical padding for dark backing strip
 
-    # Measure each word
+    # Measure each word (ALL CAPS for punch)
+    upper_words = [w.upper() for w in words]
     word_widths = []
     word_heights = []
-    for w in words:
+    for w in upper_words:
         bb = draw.textbbox((0, 0), w, font=font)
         word_widths.append(bb[2] - bb[0])
         word_heights.append(bb[3] - bb[1])
 
     # Wrap into lines if total width exceeds frame
     max_line_w = video_width - 80
-    lines: list[list[int]] = []   # list of word-index groups per line
+    lines: list[list[int]] = []
     current_line: list[int] = []
     current_w = 0
 
@@ -446,18 +448,26 @@ def render_caption_chunk(
         else:
             current_line.append(i)
             current_w += spacer + needed
-
     if current_line:
         lines.append(current_line)
 
-    # Total block height
     block_h = len(lines) * line_h
+    y_anchor = int(video_height * 0.65) - block_h // 2
 
-    # Anchor at ~65% down the frame
-    y_start = int(video_height * 0.65) - block_h // 2
+    # ── Dark semi-transparent backing strip (full-width) ──────────────────
+    strip_top = y_anchor - strip_v
+    strip_bot = y_anchor + block_h + strip_v
+    backing = Image.new("RGBA", (video_width, video_height), (0, 0, 0, 0))
+    ImageDraw.Draw(backing).rectangle(
+        [0, strip_top, video_width, strip_bot],
+        fill=(0, 0, 0, 140),   # semi-transparent black
+    )
+    img = Image.alpha_composite(img, backing)
+    draw = ImageDraw.Draw(img)
 
+    # ── Draw words ──────────────────────────────────────────────────────────
+    y_start = y_anchor
     for line_indices in lines:
-        # Compute line width
         line_w = sum(
             word_widths[i] + (h_pad * 2 if i == active_idx else 0)
             for i in line_indices
@@ -466,28 +476,40 @@ def render_caption_chunk(
         x = (video_width - line_w) // 2
 
         for i in line_indices:
-            w_text = words[i]
+            w_text = upper_words[i]
             ww     = word_widths[i]
             wh     = word_heights[i]
             bb     = draw.textbbox((0, 0), w_text, font=font)
 
             if i == active_idx:
-                # Draw highlight box
                 box_w = ww + h_pad * 2
                 box_h = wh + v_pad * 2
                 bx = x
                 by = y_start + (line_h - box_h) // 2
+
+                # ── Glow: blurred copy of the highlight box behind it ──────
+                glow_layer = Image.new("RGBA", (video_width, video_height), (0, 0, 0, 0))
+                glow_draw  = ImageDraw.Draw(glow_layer)
+                glow_spread = 18
+                glow_draw.rounded_rectangle(
+                    [bx - glow_spread, by - glow_spread,
+                     bx + box_w + glow_spread, by + box_h + glow_spread],
+                    radius=28, fill=(255, 184, 0, 110),
+                )
+                glow_blurred = glow_layer.filter(ImageFilter.GaussianBlur(14))
+                img = Image.alpha_composite(img, glow_blurred)
+                draw = ImageDraw.Draw(img)
+
+                # ── Solid highlight box ────────────────────────────────────
                 draw.rounded_rectangle(
                     [bx, by, bx + box_w, by + box_h],
                     radius=14, fill=HIGHLIGHT_COLOR,
                 )
-                # Black text on highlight
                 tx = bx + h_pad - bb[0]
                 ty = by + v_pad - bb[1]
                 draw.text((tx, ty), w_text, font=font, fill=HIGHLIGHT_TEXT)
                 x += box_w + h_gap
             else:
-                # White text with black stroke
                 tx = x - bb[0]
                 ty = y_start + (line_h - wh) // 2 - bb[1]
                 draw.text((tx, ty), w_text, font=font, fill=WHITE,
