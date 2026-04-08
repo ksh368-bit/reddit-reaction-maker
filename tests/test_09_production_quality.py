@@ -120,16 +120,16 @@ def test_add_karaoke_clips_anticipatory_timing(base_config):
 
 # ── Chunk size ────────────────────────────────────────────────────────────────
 
-def test_default_chunk_size_is_3(base_config):
-    """Default chunk_size in _add_karaoke_clips should be 3 (MrBeast-style)."""
+def test_default_chunk_size_is_2(base_config):
+    """Default chunk_size in _add_karaoke_clips should be 2 (faster urgency)."""
     from video.composer import VideoComposer
     import inspect
 
     sig = inspect.signature(VideoComposer._add_karaoke_clips)
     chunk_size_default = sig.parameters.get("chunk_size")
     assert chunk_size_default is not None, "chunk_size parameter not found"
-    assert chunk_size_default.default == 3, (
-        f"chunk_size default is {chunk_size_default.default}, expected 3"
+    assert chunk_size_default.default == 2, (
+        f"chunk_size default is {chunk_size_default.default}, expected 2"
     )
 
 

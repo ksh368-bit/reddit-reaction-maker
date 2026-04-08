@@ -165,7 +165,7 @@ class VideoComposer:
         audio_dur: float,
         total_duration: float,
         fade_in: float,
-        chunk_size: int = 3,
+        chunk_size: int = 2,
         caption_lead_sec: float = 0.1,
     ):
         """
@@ -207,6 +207,12 @@ class VideoComposer:
                         next_start = seg_start + chunk[-1]["end_time"]
                     next_start = min(next_start, total_duration)
                     dur = max(next_start - word_start, 0.05)
+
+                    # Loop hold: last word of last chunk stays on screen 0.5s longer
+                    # → viewer reads the final line → natural loop re-entry
+                    is_very_last = (chunk is chunks[-1] and active_idx == len(chunk) - 1)
+                    if is_very_last:
+                        dur += 0.5
 
                     img = render_caption_chunk(
                         words,
@@ -411,7 +417,7 @@ class VideoComposer:
                 console.print("[red]No audio clips within duration limit.[/red]")
                 return None
 
-            total_duration = current_time - gap
+            total_duration = current_time - gap + 0.5   # +0.5s for loop hold
             total_duration = min(total_duration, self.max_duration)
             total_duration = max(total_duration, 1.0)
 
@@ -425,9 +431,14 @@ class VideoComposer:
             overlay_clips = []
             fade_in = 0.15  # seconds — quick fade-in to soften hard cuts
 
-            # ── Hook overlay: t=0 → hook_duration (BEFORE Reddit card appears) ──
+            # ── Hook overlay ──
+            # If a "hook" segment exists (money quote TTS), its card is used.
+            # Otherwise fall back to static title-based hook overlay.
             hook_duration = 0.0
-            if timing_info:
+            has_hook_seg = any(s.get("type") == "hook" for _, _, _, s in timing_info)
+
+            if not has_hook_seg and timing_info:
+                # Fallback: static hook overlay (for posts without a body, e.g. Steam)
                 hook_duration = min(timing_info[0][2], 3.0)  # cap at 3s
                 try:
                     from video.card_renderer import render_hook_card
@@ -456,7 +467,7 @@ class VideoComposer:
                 clamped_display = min(display_dur, total_duration - start)
 
                 word_segs = seg.get("word_segments", [])
-                if word_segs and seg.get("type") in ("comment", "body"):
+                if word_segs and seg.get("type") in ("comment", "body", "hook"):
                     # ── Karaoke: one word-caption clip per word ──
                     self._add_karaoke_clips(
                         overlay_clips, word_segs, start, audio_dur,

@@ -590,7 +590,15 @@ def render_cards_for_post(
     os.makedirs(output_dir, exist_ok=True)
 
     for i, seg in enumerate(segments):
-        if seg.get("type") == "title":
+        if seg.get("type") == "hook":
+            # money quote displayed as hook card (same visual as static hook overlay)
+            card_img = render_hook_card(
+                seg["text"],
+                video_width=video_width,
+                video_height=video_height,
+                font_path=font_path,
+            )
+        elif seg.get("type") == "title":
             for s in segments:
                 if s.get("type") == "title":
                     s["author"]       = getattr(post, "author", "")

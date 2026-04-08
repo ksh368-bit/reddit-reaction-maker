@@ -79,7 +79,9 @@ def test_segment_order_is_title_body_comments():
         segs = engine.generate_for_post(post, tmp)
 
     types = [s["type"] for s in segs]
-    assert types[0] == "title", f"First segment is not title: {types}"
+    # hook segment may appear before title when body contains shocking content
+    non_hook = [t for t in types if t != "hook"]
+    assert non_hook[0] == "title", f"First non-hook segment is not title: {types}"
     assert "body" in types, f"No body segment: {types}"
     body_idx = types.index("body")
     first_comment_idx = next((i for i, t in enumerate(types) if t == "comment"), len(types))

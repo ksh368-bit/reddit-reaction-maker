@@ -437,6 +437,26 @@ class TTSEngine:
         os.makedirs(temp_dir, exist_ok=True)
         use_karaoke = isinstance(self.provider, EdgeTTS)
 
+        from utils.hook_extractor import extract_money_quote, extract_conflict_core
+
+        # ── Hook: money quote from body as TTS first utterance ──
+        # Viewer hears (and sees) the most shocking sentence first — mid-conflict start.
+        if post.body and len(post.body.strip()) > 30:
+            quote = extract_money_quote(self.clean_text(post.body))
+            if quote:
+                hook_path = os.path.join(temp_dir, "hook.mp3")
+                result_h = self.generate_audio(quote, hook_path, capture_boundaries=use_karaoke)
+                if result_h is not None:
+                    a_path_h = result_h[0] if isinstance(result_h, tuple) else result_h
+                    ws_h     = (result_h[1] if isinstance(result_h, tuple) else []) or []
+                    ws_h     = ws_h or whisper_word_segments(a_path_h, quote)
+                    segments.append({
+                        "type": "hook",
+                        "text": quote,
+                        "audio_path": a_path_h,
+                        "word_segments": ws_h,
+                    })
+
         # Title
         title_path = os.path.join(temp_dir, "title.mp3")
         result = self.generate_audio(post.title, title_path)
@@ -447,12 +467,14 @@ class TTSEngine:
                 "type": "title",
             })
 
-        # Body (always included — generate_audio handles truncation via max_chars)
+        # Body — cut at conflict peak (not naive 500-char slice)
         if post.body and len(post.body.strip()) > 0:
-            body_text = post.body.strip()
-            body_path = os.path.join(temp_dir, "body.mp3")
+            body_text  = post.body.strip()
+            body_path  = os.path.join(temp_dir, "body.mp3")
+            body_clean = self.clean_text(body_text)
+            tts_text_b = extract_conflict_core(body_clean, max_chars=500)
             result = self.generate_audio(
-                body_text, body_path, capture_boundaries=use_karaoke
+                tts_text_b, body_path, capture_boundaries=use_karaoke
             )
             if result is not None:
                 if use_karaoke and isinstance(result, tuple):
@@ -461,7 +483,6 @@ class TTSEngine:
                 else:
                     audio_path_b = result
                     word_segments_b = []
-                tts_text_b = self.prepare_tts_text(body_text)
                 if not word_segments_b:
                     word_segments_b = whisper_word_segments(audio_path_b, tts_text_b)
                 segments.append({
@@ -470,6 +491,23 @@ class TTSEngine:
                     "type": "body",
                     "word_segments": word_segments_b,
                 })
+
+            # ── Cliffhanger CTA for long posts (>1000 chars raw) ──
+            # Research: long posts → 2-part series outperforms single Short
+            if len(body_text) > 1000:
+                cta_text = "Comment your verdict below, and find out what happened in Part 2."
+                cta_path = os.path.join(temp_dir, "cta.mp3")
+                result_cta = self.generate_audio(cta_text, cta_path)
+                if result_cta:
+                    cta_audio = result_cta[0] if isinstance(result_cta, tuple) else result_cta
+                    segments.append({
+                        "type": "comment",
+                        "text": cta_text,
+                        "audio_path": cta_audio,
+                        "word_segments": [],
+                        "author": "",
+                        "score": 0,
+                    })
 
         # Comments — capture word boundaries for karaoke captions.
         for i, comment in enumerate(post.comments):

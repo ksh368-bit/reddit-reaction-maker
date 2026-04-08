@@ -2,6 +2,7 @@
 
 import json
 import os
+import re as _re
 import random
 import time
 import hashlib
@@ -229,6 +230,7 @@ class RedditScraper:
             return posts
 
         children = data.get("data", {}).get("children", [])
+        candidate_posts: list[tuple] = []  # (RedditPost, upvote_ratio)
 
         for child in children:
             post_data = child.get("data", {})
@@ -274,18 +276,48 @@ class RedditScraper:
                 comments=comments,
                 num_comments=num_comments,
             )
-            posts.append(post)
+            upvote_ratio = post_data.get("upvote_ratio", 1.0)
+            candidate_posts.append((post, upvote_ratio))
 
             console.print(
                 f"  [green][OK][/green] {post.title[:60]}... "
                 f"(+{post.score}, {len(comments)} comments)"
             )
 
-            if len(posts) >= self.post_limit:
-                break
+        # Sort by virality score (highest first) and take top post_limit
+        candidate_posts.sort(
+            key=lambda x: self._virality_score(x[0], x[1]), reverse=True
+        )
+        posts = [p for p, _ in candidate_posts[:self.post_limit]]
 
         console.print(f"[cyan]Found {len(posts)} eligible posts.[/cyan]")
         return posts
+
+    def _virality_score(self, post: "RedditPost", upvote_ratio: float) -> float:
+        """포스트 바이럴 잠재력 점수 — 높을수록 우선 선택."""
+        t = post.title.lower()
+        s = 0.0
+        # 강한 갈등 행동 키워드
+        for w in ['kicked out', 'called police', 'disowned', 'fired', 'divorce',
+                  'cheated', 'lied', 'stole', 'affair', 'assault', 'threatened',
+                  'walked out', 'blocked', 'cut off']:
+            if w in t:
+                s += 3.0
+        # 공감 유발 관계
+        for w in ['mother-in-law', 'mil', 'husband', 'wife', 'boss',
+                  'sister', 'brother', 'mom', 'dad', 'coworker', 'friend']:
+            if w in t:
+                s += 1.5
+        # 금전 갈등
+        s += len(_re.findall(r'\$[\d,]+', post.title)) * 2.0
+        # 논란도 보너스: upvote_ratio 낮을수록 찬반 팽팽 = 공유 ↑
+        if upvote_ratio < 0.85:
+            s += 3.0
+        elif upvote_ratio < 0.92:
+            s += 1.0
+        # 업보트 (과도한 가중치 방지 — 최대 2점)
+        s += min(post.score / 10_000.0, 2.0)
+        return s
 
     def fetch_single_post(self, post_id: str) -> RedditPost | None:
         """Fetch a specific post by ID using .json endpoint."""
