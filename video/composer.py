@@ -21,7 +21,7 @@ from moviepy import (
     VideoClip,
     VideoFileClip,
 )
-from moviepy.video.fx import CrossFadeIn
+from moviepy.video.fx import CrossFadeIn, FadeOut
 from rich.console import Console
 
 from video.background import (
@@ -165,44 +165,61 @@ class VideoComposer:
         audio_dur: float,
         total_duration: float,
         fade_in: float,
+        chunk_size: int = 4,
     ):
         """
-        Add per-word caption clips to overlay_clips for karaoke-style display.
+        Add chunk-style caption clips: shows 3-4 words at a time with the
+        current spoken word highlighted in yellow/orange.
 
-        Each word is shown as a full-canvas render_word_caption overlay,
-        timed to its WordBoundary start/end from edge-tts.
+        Research finding: 3-4 words/frame with active-word highlight
+        outperforms single-word karaoke on Reddit Shorts.
         """
-        from video.card_renderer import render_word_caption
+        from video.card_renderer import render_caption_chunk
         import tempfile, os
 
         tmp_dir = tempfile.mkdtemp(prefix="karaoke_")
         try:
-            for i, ws in enumerate(word_segs):
-                word_start = seg_start + ws["start_time"]
-                word_end   = seg_start + ws["end_time"]
+            # Group word_segs into chunks of chunk_size
+            chunks = []
+            for i in range(0, len(word_segs), chunk_size):
+                chunks.append(word_segs[i:i + chunk_size])
 
-                if word_start >= total_duration:
-                    break
-                word_end = min(word_end, total_duration)
-                dur = max(word_end - word_start, 0.05)
+            for chunk in chunks:
+                words = [ws["word"] for ws in chunk]
 
-                img = render_word_caption(
-                    ws["word"],
-                    video_width=self.width,
-                    video_height=self.height,
-                    font_path=self.font_path,
-                )
-                img_path = os.path.join(tmp_dir, f"word_{i:04d}.png")
-                img.save(img_path, "PNG")
+                for active_idx, ws in enumerate(chunk):
+                    word_start = seg_start + ws["start_time"]
+                    if word_start >= total_duration:
+                        break
 
-                clip = ImageClip(img_path, duration=dur).with_position((0, 0))
-                if word_start > 0:
-                    clip = clip.with_effects([CrossFadeIn(min(fade_in, dur * 0.3))])
-                clip = clip.with_start(word_start)
-                overlay_clips.append(clip)
+                    # Clip spans from this word's start to the next word's start
+                    # (or end of chunk / segment)
+                    if active_idx + 1 < len(chunk):
+                        next_start = seg_start + chunk[active_idx + 1]["start_time"]
+                    else:
+                        next_start = seg_start + chunk[-1]["end_time"]
+                    next_start = min(next_start, total_duration)
+                    dur = max(next_start - word_start, 0.05)
+
+                    img = render_caption_chunk(
+                        words,
+                        active_idx=active_idx,
+                        video_width=self.width,
+                        video_height=self.height,
+                        font_path=self.font_path,
+                    )
+                    img_path = os.path.join(
+                        tmp_dir,
+                        f"chunk_{id(chunk):x}_{active_idx:02d}.png",
+                    )
+                    img.save(img_path, "PNG")
+
+                    clip = ImageClip(img_path, duration=dur).with_position((0, 0))
+                    clip = clip.with_start(word_start)
+                    overlay_clips.append(clip)
+
         except Exception as e:
             console.print(f"  [yellow]Karaoke clip error: {e}[/yellow]")
-        # Note: tmp_dir cleaned up by OS eventually; small PNG files
 
     def _create_progress_bar(self, total_duration: float) -> VideoClip:
         """Create a progress bar clip that fills left-to-right over total_duration."""
@@ -396,13 +413,21 @@ class VideoComposer:
                         total_duration, fade_in,
                     )
                 else:
+                    clip_dur = max(clamped_display, audio_dur)
                     clip = self._create_screenshot_clip(
-                        card_path, max(clamped_display, audio_dur),
+                        card_path, clip_dur,
                         seg_type=seg.get("type", "comment"),
                     )
                     if clip:
+                        effects = []
                         if start > 0:
-                            clip = clip.with_effects([CrossFadeIn(fade_in)])
+                            effects.append(CrossFadeIn(fade_in))
+                        # Title card fades out at the end so screen clears
+                        # for karaoke captions (research: card shown 5-10s then gone)
+                        if seg.get("type") == "title" and clip_dur > 1.0:
+                            effects.append(FadeOut(min(0.5, clip_dur * 0.2)))
+                        if effects:
+                            clip = clip.with_effects(effects)
                         clip = clip.with_start(start)
                         overlay_clips.append(clip)
 

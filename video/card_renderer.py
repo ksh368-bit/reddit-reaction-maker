@@ -12,6 +12,47 @@ from rich.console import Console
 console = Console()
 
 
+def extract_hook_text(title: str) -> str:
+    """
+    Extract the most impactful hook phrase from a Reddit post title.
+
+    Strips AITA/WIBTA/Am I preambles and returns the transgression/action
+    part — the first thing viewers should see in the opening hook.
+
+    Examples:
+      "AITA for kicking out my sister after she stole $5000"
+        → "kicking out my sister after she stole $5000"
+      "WIBTA if I refused to attend my brother's wedding"
+        → "I refused to attend my brother's wedding"
+    """
+    # Patterns to strip from the start (case-insensitive)
+    preambles = [
+        r"^AITA\s+for\s+",
+        r"^AITA\s+",
+        r"^WIBTA\s+if\s+",
+        r"^WIBTA\s+for\s+",
+        r"^WIBTA\s+",
+        r"^Am\s+I\s+the\s+asshole\s+for\s+",
+        r"^Am\s+I\s+the\s+asshole\s+",
+        r"^Am\s+I\s+wrong\s+for\s+",
+        r"^Am\s+I\s+wrong\s+",
+        r"^Am\s+I\s+being\s+",
+        r"^Am\s+I\s+",
+    ]
+    text = title.strip()
+    for pattern in preambles:
+        cleaned = re.sub(pattern, "", text, flags=re.IGNORECASE).strip()
+        if cleaned and cleaned != text:
+            text = cleaned
+            break
+
+    # Capitalize first letter
+    if text:
+        text = text[0].upper() + text[1:]
+
+    return text or title
+
+
 def detect_keyword(text: str) -> str | None:
     """Extract a short highlight keyword: dollar amounts → K/M numbers → large numbers → percentages."""
     m = re.search(r'\$\s*[\d,]+(?:\.\d+)?\s*[KMBkmb]?', text)
@@ -248,7 +289,8 @@ def render_hook_card(
     padding   = 60
     content_w = video_width - padding * 2
 
-    lines   = _wrap_text(draw, title, font, content_w)[:3]
+    hook_text = extract_hook_text(title)
+    lines   = _wrap_text(draw, hook_text, font, content_w)[:3]
     line_h  = int(font_size * 1.45)
     block_h = len(lines) * line_h
 
@@ -347,7 +389,118 @@ def render_comment_card(
 
 
 # ──────────────────────────────────────────────
-#  4. Word-level caption overlay
+#  4. Chunk caption overlay  (3-4 words, active word highlighted)
+# ──────────────────────────────────────────────
+
+HIGHLIGHT_COLOR = (255, 184, 0, 255)   # yellow-orange highlight box
+HIGHLIGHT_TEXT  = (0, 0, 0, 255)       # black text on highlight
+
+
+def render_caption_chunk(
+    words: list[str],
+    active_idx: int,
+    video_width: int = 1080,
+    video_height: int = 1920,
+    font_path: str | None = None,
+    font_size: int = 100,
+) -> Image.Image:
+    """
+    Full-canvas RGBA overlay showing 3-4 words as a chunk.
+
+    The active word (active_idx) gets a yellow/orange rounded-rect highlight
+    behind it; the other words are white with black stroke.
+
+    Position: lower-center (~65% down the frame), matching the dominant
+    format used by top Reddit Shorts channels.
+    """
+    img  = Image.new("RGBA", (video_width, video_height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    font      = _load_bold_font(font_path, font_size)
+    h_gap     = 24          # horizontal gap between words
+    v_pad     = 16          # vertical padding inside highlight box
+    h_pad     = 20          # horizontal padding inside highlight box
+    line_h    = int(font_size * 1.4)
+
+    # Measure each word
+    word_widths = []
+    word_heights = []
+    for w in words:
+        bb = draw.textbbox((0, 0), w, font=font)
+        word_widths.append(bb[2] - bb[0])
+        word_heights.append(bb[3] - bb[1])
+
+    # Wrap into lines if total width exceeds frame
+    max_line_w = video_width - 80
+    lines: list[list[int]] = []   # list of word-index groups per line
+    current_line: list[int] = []
+    current_w = 0
+
+    for i, ww in enumerate(word_widths):
+        needed = ww + (h_pad * 2 if i == active_idx else 0)
+        spacer = h_gap if current_line else 0
+        if current_w + spacer + needed > max_line_w and current_line:
+            lines.append(current_line)
+            current_line = [i]
+            current_w = needed
+        else:
+            current_line.append(i)
+            current_w += spacer + needed
+
+    if current_line:
+        lines.append(current_line)
+
+    # Total block height
+    block_h = len(lines) * line_h
+
+    # Anchor at ~65% down the frame
+    y_start = int(video_height * 0.65) - block_h // 2
+
+    for line_indices in lines:
+        # Compute line width
+        line_w = sum(
+            word_widths[i] + (h_pad * 2 if i == active_idx else 0)
+            for i in line_indices
+        ) + h_gap * (len(line_indices) - 1)
+
+        x = (video_width - line_w) // 2
+
+        for i in line_indices:
+            w_text = words[i]
+            ww     = word_widths[i]
+            wh     = word_heights[i]
+            bb     = draw.textbbox((0, 0), w_text, font=font)
+
+            if i == active_idx:
+                # Draw highlight box
+                box_w = ww + h_pad * 2
+                box_h = wh + v_pad * 2
+                bx = x
+                by = y_start + (line_h - box_h) // 2
+                draw.rounded_rectangle(
+                    [bx, by, bx + box_w, by + box_h],
+                    radius=14, fill=HIGHLIGHT_COLOR,
+                )
+                # Black text on highlight
+                tx = bx + h_pad - bb[0]
+                ty = by + v_pad - bb[1]
+                draw.text((tx, ty), w_text, font=font, fill=HIGHLIGHT_TEXT)
+                x += box_w + h_gap
+            else:
+                # White text with black stroke
+                tx = x - bb[0]
+                ty = y_start + (line_h - wh) // 2 - bb[1]
+                draw.text((tx, ty), w_text, font=font, fill=WHITE,
+                          stroke_width=4, stroke_fill=BLACK)
+                x += ww + h_gap
+
+        y_start += line_h
+
+    return img
+
+
+# ──────────────────────────────────────────────
+#  5. Word-level caption overlay  (legacy single-word)
 # ──────────────────────────────────────────────
 
 def render_word_caption(
