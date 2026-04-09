@@ -502,12 +502,10 @@ class TTSEngine:
                 if result_cta:
                     cta_audio = result_cta[0] if isinstance(result_cta, tuple) else result_cta
                     segments.append({
-                        "type": "comment",
+                        "type": "cta",
                         "text": cta_text,
                         "audio_path": cta_audio,
                         "word_segments": [],
-                        "author": "",
-                        "score": 0,
                     })
 
         # Comments — capture word boundaries for karaoke captions.

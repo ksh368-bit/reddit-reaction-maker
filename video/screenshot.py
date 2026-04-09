@@ -330,6 +330,12 @@ def _fill_missing_cards(segments: list[dict], output_dir: str):
                 seg.get("verdict_label", "NTA"),
                 video_width=1080, video_height=1920,
             )
+        elif seg.get("type") == "cta":
+            from video.card_renderer import render_cta_card
+            card_img = render_cta_card(
+                seg.get("text", ""),
+                video_width=1080, video_height=1920,
+            )
         else:
             card_img = render_comment_card(
                 body=seg["text"],

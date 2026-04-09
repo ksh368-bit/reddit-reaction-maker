@@ -320,7 +320,54 @@ def render_hook_card(
 
 
 # ──────────────────────────────────────────────
-#  3. Bold text overlay  (comment segments)
+#  3. CTA card (dedicated — avoids 165px comment fallback)
+# ──────────────────────────────────────────────
+
+def render_cta_card(
+    text: str,
+    video_width: int = 1080,
+    video_height: int = 1920,
+    font_path: str | None = None,
+) -> Image.Image:
+    """
+    CTA용 전용 카드: 60px 폰트, 다크 배킹 스트립, 하단 중앙.
+    comment_card fallback(165px)을 피해 적정 크기로 렌더링.
+    """
+    img  = Image.new("RGBA", (video_width, video_height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    font_size = 60
+    font = _load_bold_font(font_path, font_size)
+    padding = 80
+    content_width = video_width - padding * 2
+
+    lines = _wrap_text(draw, text, font, content_width)[:4]
+    line_h  = int(font_size * 1.45)
+    block_h = len(lines) * line_h
+
+    y_center = int(video_height * 0.72)
+    y = y_center - block_h // 2
+
+    # 다크 반투명 배킹
+    backing_pad = 24
+    draw.rectangle(
+        [0, y - backing_pad, video_width, y + block_h + backing_pad],
+        fill=(0, 0, 0, 160),
+    )
+
+    for line in lines:
+        bbox = draw.textbbox((0, 0), line, font=font)
+        lw = bbox[2] - bbox[0]
+        x  = (video_width - lw) // 2 - bbox[0]
+        draw.text((x, y), line, font=font, fill=(255, 255, 255, 255),
+                  stroke_width=3, stroke_fill=(0, 0, 0, 255))
+        y += line_h
+
+    return img
+
+
+# ──────────────────────────────────────────────
+#  4. Bold text overlay  (comment segments)
 # ──────────────────────────────────────────────
 
 def render_comment_card(
@@ -672,6 +719,13 @@ def render_cards_for_post(
                 font_size=title_font_size,
                 num_comments=seg.get("num_comments", 0),
                 video_height=video_height,
+            )
+        elif seg.get("type") == "cta":
+            card_img = render_cta_card(
+                seg.get("text", ""),
+                video_width=video_width,
+                video_height=video_height,
+                font_path=font_path,
             )
         else:
             card_img = render_comment_card(
