@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from utils.config_loader import load_config
 from utils.meta_generator import MetaGenerator
+from utils.verdict_extractor import extract_verdict
 from reddit.scraper import RedditScraper, TextFileScraper
 from tts.engine import TTSEngine
 from video.composer import VideoComposer
@@ -77,7 +78,8 @@ def process_post(post, tts_engine: TTSEngine, composer: VideoComposer, scraper) 
         # Step 3: Save meta + history
         console.print("  [cyan][3/3] Updating history & saving meta...[/cyan]")
         scraper.save_to_history(post.id)
-        meta_path = MetaGenerator.save_meta(post, output_path)
+        verdict   = extract_verdict(post.comments) if post.comments else None
+        meta_path = MetaGenerator.save_meta(post, output_path, verdict=verdict)
         console.print(f"  [dim]Meta: {os.path.basename(meta_path)}[/dim]")
 
         return output_path

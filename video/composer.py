@@ -325,8 +325,16 @@ class VideoComposer:
             console.print(f"  [yellow]Watermark error: {e}[/yellow]")
             return None
 
-    def _create_bgm_clip(self, duration: float) -> AudioFileClip | None:
-        """Create a background music audio clip (volume-adjusted)."""
+    def _create_bgm_clip(self, duration: float,
+                         timing_info: list | None = None,
+                         duck_factor: float = 0.35) -> AudioFileClip | None:
+        """
+        Create a background music audio clip with optional TTS ducking.
+
+        When timing_info is provided, BGM volume is reduced to bgm_volume * duck_factor
+        during TTS speech segments and restored to full bgm_volume during gaps.
+        Also fixes BGM shorter than video by looping (AudioLoop effect).
+        """
         if not self.bgm_enabled:
             return None
 
@@ -337,13 +345,40 @@ class VideoComposer:
         console.print(f"  [dim]BGM: {os.path.basename(audio_path)} (vol: {self.bgm_volume})[/dim]")
 
         try:
+            from moviepy.audio.fx import AudioLoop, MultiplyVolume
+            from moviepy import concatenate_audioclips
+
             bgm = AudioFileClip(audio_path)
 
-            if bgm.duration >= duration:
+            # Loop BGM if shorter than the video (previously would just cut short)
+            if bgm.duration < duration:
+                bgm = bgm.with_effects([AudioLoop(duration=duration)])
+            else:
                 bgm = bgm.subclipped(0, duration)
 
-            bgm = bgm.with_volume_scaled(self.bgm_volume)
-            return bgm
+            if not timing_info:
+                return bgm.with_volume_scaled(self.bgm_volume)
+
+            # ── Audio ducking: reduce BGM during TTS speech ──
+            intervals: list[tuple[float, float, float]] = []  # (start, dur, vol_multiplier)
+            prev_end = 0.0
+            for seg_start, audio_dur, _, _ in timing_info:
+                gap = seg_start - prev_end
+                if gap > 0.02:
+                    intervals.append((prev_end, gap, 1.0))             # gap: full vol
+                intervals.append((seg_start, audio_dur, duck_factor))  # TTS: ducked
+                prev_end = seg_start + audio_dur
+            tail = duration - prev_end
+            if tail > 0.02:
+                intervals.append((prev_end, tail, 1.0))
+
+            pieces = [
+                bgm.subclipped(s, s + d)
+                  .with_effects([MultiplyVolume(self.bgm_volume * v)])
+                for s, d, v in intervals
+                if d > 0.01
+            ]
+            return concatenate_audioclips(pieces) if pieces else bgm.with_volume_scaled(self.bgm_volume)
 
         except Exception as e:
             console.print(f"  [yellow]BGM load error: {e}[/yellow]")
@@ -473,6 +508,16 @@ class VideoComposer:
                         overlay_clips, word_segs, start, audio_dur,
                         total_duration, fade_in,
                     )
+                elif seg.get("type") == "verdict":
+                    # Zoom punch for dramatic reveal — minimum 2s display
+                    clip_dur = max(clamped_display, audio_dur, 2.0)
+                    clip = self._create_zoom_punch_clip(
+                        card_path, clip_dur,
+                        zoom_duration=0.4, zoom_scale=1.08,
+                    )
+                    if clip is None:
+                        clip = ImageClip(card_path, duration=clip_dur).with_position((0, 0))
+                    overlay_clips.append(clip.with_start(start))
                 else:
                     clip_dur = max(clamped_display, audio_dur)
                     clip = self._create_screenshot_clip(
@@ -520,7 +565,7 @@ class VideoComposer:
             # ── Step 6: Mix audio ──
             tts_audio = CompositeAudioClip(audio_clips)
 
-            bgm_clip = self._create_bgm_clip(total_duration)
+            bgm_clip = self._create_bgm_clip(total_duration, timing_info=timing_info)
             if bgm_clip:
                 mixed_audio = CompositeAudioClip([tts_audio, bgm_clip.with_start(0)])
             else:

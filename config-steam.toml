@@ -13,7 +13,7 @@ top_comments = 6
 [tts]
 engine = "edge-tts"
 voice = "en-US-GuyNeural"
-rate = "+20%"
+rate = "+25%"
 language = "en"
 slow = false
 

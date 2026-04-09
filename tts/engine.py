@@ -438,6 +438,7 @@ class TTSEngine:
         use_karaoke = isinstance(self.provider, EdgeTTS)
 
         from utils.hook_extractor import extract_money_quote, extract_conflict_core
+        from utils.verdict_extractor import extract_verdict, VERDICT_TEXT
 
         # ── Hook: money quote from body as TTS first utterance ──
         # Viewer hears (and sees) the most shocking sentence first — mid-conflict start.
@@ -495,7 +496,7 @@ class TTSEngine:
             # ── Cliffhanger CTA for long posts (>1000 chars raw) ──
             # Research: long posts → 2-part series outperforms single Short
             if len(body_text) > 1000:
-                cta_text = "Comment your verdict below, and find out what happened in Part 2."
+                cta_text = "Comment NTA or YTA below — and catch Part 2 for what happens next."
                 cta_path = os.path.join(temp_dir, "cta.mp3")
                 result_cta = self.generate_audio(cta_text, cta_path)
                 if result_cta:
@@ -537,6 +538,25 @@ class TTSEngine:
                 "score": comment.score,
                 "word_segments": word_segments,
             })
+
+        # ── Verdict Card ──
+        # Skip when CTA is present (long post teases Part 2 instead of showing verdict).
+        has_cta = post.body and len(post.body.strip()) > 1000
+        if not has_cta and post.comments:
+            verdict = extract_verdict(post.comments)
+            if verdict:
+                vtext = VERDICT_TEXT.get(verdict, verdict)
+                v_path = os.path.join(temp_dir, "verdict.mp3")
+                result_v = self.generate_audio(vtext, v_path)
+                if result_v is not None:
+                    a_path_v = result_v[0] if isinstance(result_v, tuple) else result_v
+                    segments.append({
+                        "type":          "verdict",
+                        "verdict_label": verdict,
+                        "text":          vtext,
+                        "audio_path":    a_path_v,
+                        "word_segments": [],   # static card — no karaoke
+                    })
 
         console.print(
             f"  [green][OK][/green] Generated {len(segments)} audio segments"

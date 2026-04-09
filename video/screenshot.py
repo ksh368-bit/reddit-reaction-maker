@@ -324,6 +324,12 @@ def _fill_missing_cards(segments: list[dict], output_dir: str):
                 score=seg.get("score", 0),
                 subreddit=seg.get("subreddit", "roblox"),
             )
+        elif seg.get("type") == "verdict":
+            from video.card_renderer import render_verdict_card
+            card_img = render_verdict_card(
+                seg.get("verdict_label", "NTA"),
+                video_width=1080, video_height=1920,
+            )
         else:
             card_img = render_comment_card(
                 body=seg["text"],

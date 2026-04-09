@@ -8,6 +8,7 @@ import os
 import re
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from rich.console import Console
+from utils.verdict_extractor import VERDICT_TEXT
 
 console = Console()
 
@@ -573,6 +574,53 @@ def render_word_caption(
 
 
 # ──────────────────────────────────────────────
+#  Verdict card
+# ──────────────────────────────────────────────
+
+_VERDICT_COLORS: dict[str, tuple[int, int, int]] = {
+    "NTA":  (50,  205,  50),
+    "YTA":  (220,  50,  50),
+    "ESH":  (255, 140,   0),
+    "NAH":  (100, 200, 255),
+    "INFO": (180, 180, 180),
+}
+
+
+def render_verdict_card(verdict: str, video_width: int, video_height: int,
+                        font_path: str | None = None) -> Image.Image:
+    """Full-screen verdict reveal: large colored label + subtitle."""
+    img = Image.new("RGBA", (video_width, video_height), (0, 0, 0, 0))
+    backing = Image.new("RGBA", (video_width, video_height), (0, 0, 0, 210))
+    img = Image.alpha_composite(img, backing)
+    draw = ImageDraw.Draw(img)
+
+    color = _VERDICT_COLORS.get(verdict.upper(), (255, 255, 255))
+    cx, cy = video_width // 2, video_height // 2
+
+    # Large verdict label (e.g. "NTA")
+    draw.text(
+        (cx, cy - 60), verdict.upper(),
+        font=_load_bold_font(font_path, 220),
+        fill=color + (255,),
+        anchor="mm",
+        stroke_width=6,
+        stroke_fill=(0, 0, 0, 255),
+    )
+
+    # Subtitle (e.g. "Not the asshole.")
+    subtitle = VERDICT_TEXT.get(verdict.upper(), "")
+    draw.text(
+        (cx, cy + 130), subtitle,
+        font=_load_font(font_path, 52),
+        fill=(255, 255, 255, 230),
+        anchor="mm",
+        stroke_width=3,
+        stroke_fill=(0, 0, 0, 200),
+    )
+    return img
+
+
+# ──────────────────────────────────────────────
 #  Batch renderer
 # ──────────────────────────────────────────────
 
@@ -590,7 +638,14 @@ def render_cards_for_post(
     os.makedirs(output_dir, exist_ok=True)
 
     for i, seg in enumerate(segments):
-        if seg.get("type") == "hook":
+        if seg.get("type") == "verdict":
+            card_img = render_verdict_card(
+                seg["verdict_label"],
+                video_width=video_width,
+                video_height=video_height,
+                font_path=font_path,
+            )
+        elif seg.get("type") == "hook":
             # money quote displayed as hook card (same visual as static hook overlay)
             card_img = render_hook_card(
                 seg["text"],

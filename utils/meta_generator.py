@@ -47,7 +47,7 @@ class MetaGenerator:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def generate_title(post) -> str:
+    def generate_title(post, verdict: str | None = None) -> str:
         """Return a YouTube Shorts hook title (≤60 chars)."""
         text = _STRIP_PREFIXES.sub("", post.title).strip()
         # Capitalise first letter
@@ -59,15 +59,20 @@ class MetaGenerator:
         # Truncate at word boundary (≤60 chars including ellipsis)
         if len(text) > 60:
             text = text[:59].rsplit(" ", 1)[0].rstrip(",.") + "…"
+        # Append verdict badge if it fits
+        if verdict and len(text) + len(f" ({verdict})") <= 60:
+            text = f"{text} ({verdict})"
         return text
 
     @staticmethod
-    def generate_hashtags(post) -> str:
+    def generate_hashtags(post, verdict: str | None = None) -> str:
         """Return a space-joined hashtag string (3-5 tags, always #Shorts #Reddit)."""
         sub_key = post.subreddit.lower().split("+")[0]  # e.g. "Steam+pcgaming" → "steam"
         niche = _SUBREDDIT_TAGS.get(sub_key, ["#RedditStories"])[:2]
 
         tags = ["#Shorts", "#Reddit"] + niche
+        if verdict in ("NTA", "YTA", "ESH"):
+            tags.append(f"#{verdict}")
         # Deduplicate while preserving order
         seen: set[str] = set()
         unique: list[str] = []
@@ -78,7 +83,7 @@ class MetaGenerator:
         return " ".join(unique[:5])
 
     @staticmethod
-    def generate_description(post) -> str:
+    def generate_description(post, verdict: str | None = None) -> str:
         """Return a YouTube description with story summary + hashtags + CTA."""
         sub_key = post.subreddit.lower().split("+")[0]
         intro = _SUBREDDIT_INTRO.get(sub_key, "A Redditor shares their story")
@@ -96,28 +101,29 @@ class MetaGenerator:
 
         summary = f"{intro} — {summary_raw.rstrip('.,')}."
 
-        hashtags = MetaGenerator.generate_hashtags(post)
+        hashtags = MetaGenerator.generate_hashtags(post, verdict=verdict)
         cta = "🔔 Subscribe for daily Reddit stories"
 
-        desc = f"{summary}\n\n{hashtags}\n{cta}"
+        verdict_line = f"The internet says: {verdict}\n\n" if verdict else ""
+        desc = f"{verdict_line}{summary}\n\n{hashtags}\n{cta}"
 
         # Hard cap 500 chars (YouTube shows ~250 before "Show more")
         if len(desc) > 500:
             # Shorten summary only
-            max_summary = 500 - len(f"\n\n{hashtags}\n{cta}") - 5
+            max_summary = 500 - len(f"{verdict_line}\n\n{hashtags}\n{cta}") - 5
             summary = summary[:max_summary].rsplit(" ", 1)[0] + "…"
-            desc = f"{summary}\n\n{hashtags}\n{cta}"
+            desc = f"{verdict_line}{summary}\n\n{hashtags}\n{cta}"
 
         return desc
 
     @staticmethod
-    def save_meta(post, video_path: str) -> str:
+    def save_meta(post, video_path: str, verdict: str | None = None) -> str:
         """Write _meta.txt next to the video file and return its path."""
         base = os.path.splitext(video_path)[0]
         meta_path = f"{base}_meta.txt"
 
-        title = MetaGenerator.generate_title(post)
-        description = MetaGenerator.generate_description(post)
+        title = MetaGenerator.generate_title(post, verdict=verdict)
+        description = MetaGenerator.generate_description(post, verdict=verdict)
 
         sep = "=" * 60
         content = "\n".join([

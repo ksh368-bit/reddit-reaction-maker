@@ -141,23 +141,26 @@ class RedditScraper:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(history, f, indent=2)
 
+    # Regex: comment starts with verdict label (NTA/YTA/ESH/NAH/INFO)
+    _VERDICT_START_RE = _re.compile(r'^\s*(NTA|YTA|ESH|NAH|INFO)\b', _re.IGNORECASE)
+
     def _parse_comments(self, comments_data: list) -> list[Comment]:
-        """Parse comments from Reddit JSON response."""
-        comments = []
+        """Parse comments from Reddit JSON response, verdict-leading first."""
+        candidates: list[Comment] = []
         if not comments_data or len(comments_data) < 2:
-            return comments
+            return candidates
 
         # Comments are in the second element of the response
         comment_listing = comments_data[1].get("data", {}).get("children", [])
 
-        for child in comment_listing[:self.top_comments * 2]:
+        for child in comment_listing[:self.top_comments * 3]:
             if child.get("kind") != "t1":
                 continue
             data = child.get("data", {})
-            body = data.get("body", "").strip()
+            body   = data.get("body", "").strip()
             author = data.get("author", "Anonymous")
+            score  = data.get("score", 0)
 
-            score = data.get("score", 0)
             if (
                 body
                 and body not in ("[deleted]", "[removed]")
@@ -165,17 +168,19 @@ class RedditScraper:
                 and author not in ("[deleted]", "AutoModerator")
                 and score >= self.min_comment_score
             ):
-                comments.append(Comment(
+                candidates.append(Comment(
                     id=data.get("id", ""),
                     author=author,
                     body=body,
                     score=score,
                 ))
 
-            if len(comments) >= self.top_comments:
-                break
-
-        return comments
+        # Verdict-leading comments ranked first; ties broken by score
+        candidates.sort(
+            key=lambda c: (bool(self._VERDICT_START_RE.match(c.body)), c.score),
+            reverse=True,
+        )
+        return candidates[:self.top_comments]
 
     def fetch_posts(self, time_filter: str = "week") -> list[RedditPost]:
         """
@@ -277,7 +282,8 @@ class RedditScraper:
                 num_comments=num_comments,
             )
             upvote_ratio = post_data.get("upvote_ratio", 1.0)
-            candidate_posts.append((post, upvote_ratio))
+            created_utc  = post_data.get("created_utc", 0.0)
+            candidate_posts.append((post, upvote_ratio, created_utc))
 
             console.print(
                 f"  [green][OK][/green] {post.title[:60]}... "
@@ -286,14 +292,15 @@ class RedditScraper:
 
         # Sort by virality score (highest first) and take top post_limit
         candidate_posts.sort(
-            key=lambda x: self._virality_score(x[0], x[1]), reverse=True
+            key=lambda x: self._virality_score(x[0], x[1], x[2]), reverse=True
         )
-        posts = [p for p, _ in candidate_posts[:self.post_limit]]
+        posts = [p for p, _, _ in candidate_posts[:self.post_limit]]
 
         console.print(f"[cyan]Found {len(posts)} eligible posts.[/cyan]")
         return posts
 
-    def _virality_score(self, post: "RedditPost", upvote_ratio: float) -> float:
+    def _virality_score(self, post: "RedditPost", upvote_ratio: float,
+                        created_utc: float = 0.0) -> float:
         """포스트 바이럴 잠재력 점수 — 높을수록 우선 선택."""
         t = post.title.lower()
         s = 0.0
@@ -317,6 +324,17 @@ class RedditScraper:
             s += 1.0
         # 업보트 (과도한 가중치 방지 — 최대 2점)
         s += min(post.score / 10_000.0, 2.0)
+        # 신선도 보너스: 최신 포스트 우선
+        age_hours = (time.time() - created_utc) / 3600 if created_utc else 0
+        if age_hours < 6:
+            s += 2.0
+        elif age_hours < 24:
+            s += 1.0
+        elif age_hours > 168:   # 1주 초과
+            s -= 1.0
+        # EDIT/UPDATE 보너스: 결말 있는 포스트 = 완결성 ↑ → completion rate ↑
+        if post.body and _re.search(r'\bEDIT\b|\bUPDATE\b', post.body, _re.IGNORECASE):
+            s += 1.5
         return s
 
     def fetch_single_post(self, post_id: str) -> RedditPost | None:
