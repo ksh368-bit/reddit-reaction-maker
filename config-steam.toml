@@ -40,3 +40,13 @@ min_comment_score = 50
 dir = "output/steam"
 filename_template = "steam_{post_id}_{date}"
 history_file = "output/steam/history.json"
+
+[youtube]
+enabled = false
+credentials_path = "credentials.json"
+token_path = "token.json"
+privacy = "public"
+category_id = "24"
+made_for_kids = false
+notify_subscribers = true
+upload_thumbnail = true

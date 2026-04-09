@@ -599,8 +599,14 @@ class VideoComposer:
             if bgm_clip:
                 bgm_clip.close()
 
-            # Clean up card images
+            # Save thumbnail before cleaning up cards
             import shutil
+            hook_src = os.path.join(cards_dir, "_hook.png")
+            if os.path.exists(hook_src):
+                thumb_dst = os.path.splitext(output_path)[0] + "_thumb.png"
+                shutil.copy2(hook_src, thumb_dst)
+
+            # Clean up card images
             shutil.rmtree(cards_dir, ignore_errors=True)
 
             file_size = os.path.getsize(output_path) / (1024 * 1024)

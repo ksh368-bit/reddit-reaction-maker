@@ -24,6 +24,10 @@ assets/backgrounds/*.mp4
 assets/fonts/*.ttf
 assets/fonts/*.otf
 
+# YouTube API credentials (never commit these)
+credentials.json
+token.json
+
 # IDE
 .vscode/
 .idea/

@@ -35,6 +35,7 @@ from utils.verdict_extractor import extract_verdict
 from reddit.scraper import RedditScraper, TextFileScraper
 from tts.engine import TTSEngine
 from video.composer import VideoComposer
+from youtube.uploader import upload_video
 
 console = Console()
 
@@ -50,7 +51,7 @@ BANNER = """
 """
 
 
-def process_post(post, tts_engine: TTSEngine, composer: VideoComposer, scraper) -> str | None:
+def process_post(post, tts_engine: TTSEngine, composer: VideoComposer, scraper, config: dict) -> str | None:
     """Process a single post (Reddit or text file) into a Shorts video."""
     console.print(f"\n[bold]Processing: {post.title[:60]}...[/bold]")
     console.print(f"  [dim]ID: {post.id} | Score: {post.score} | Comments: {len(post.comments)}[/dim]")
@@ -81,6 +82,30 @@ def process_post(post, tts_engine: TTSEngine, composer: VideoComposer, scraper) 
         verdict   = extract_verdict(post.comments) if post.comments else None
         meta_path = MetaGenerator.save_meta(post, output_path, verdict=verdict)
         console.print(f"  [dim]Meta: {os.path.basename(meta_path)}[/dim]")
+
+        # Step 4: Upload to YouTube (optional, graceful failure)
+        yt_cfg = config.get("youtube", {})
+        if yt_cfg.get("enabled", False):
+            console.print("  [cyan][4/4] Uploading to YouTube...[/cyan]")
+            title = MetaGenerator.generate_title(post, verdict=verdict)
+            description = MetaGenerator.generate_description(post, verdict=verdict)
+            thumb_path = os.path.splitext(output_path)[0] + "_thumb.png"
+            if not os.path.exists(thumb_path):
+                thumb_path = None
+            video_id = upload_video(
+                output_path, title, description,
+                credentials_path=yt_cfg.get("credentials_path", "credentials.json"),
+                token_path=yt_cfg.get("token_path", "token.json"),
+                privacy=yt_cfg.get("privacy", "public"),
+                category_id=yt_cfg.get("category_id", "24"),
+                made_for_kids=yt_cfg.get("made_for_kids", False),
+                notify_subscribers=yt_cfg.get("notify_subscribers", True),
+                thumb_path=thumb_path if yt_cfg.get("upload_thumbnail", True) else None,
+            )
+            if video_id:
+                console.print(f"  [green]YouTube: https://youtu.be/{video_id}[/green]")
+            else:
+                console.print("  [yellow]YouTube upload failed (video kept locally)[/yellow]")
 
         return output_path
 
@@ -169,7 +194,7 @@ def main():
         console.print(
             Panel(f"[bold]Post {i}/{len(posts)}[/bold]", style="cyan")
         )
-        output = process_post(post, tts_engine, composer, scraper)
+        output = process_post(post, tts_engine, composer, scraper, config)
         if output:
             results.append({"post": post, "output": output})
 

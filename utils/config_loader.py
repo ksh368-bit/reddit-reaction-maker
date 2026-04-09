@@ -46,5 +46,15 @@ def load_config(config_path: str = DEFAULT_CONFIG_PATH) -> dict:
     config.setdefault("tts", {"engine": "gtts", "language": "en"})
     config.setdefault("video", {})
     config.setdefault("output", {"dir": "output", "history_file": "output/history.json"})
+    config.setdefault("youtube", {
+        "enabled": False,
+        "credentials_path": "credentials.json",
+        "token_path": "token.json",
+        "privacy": "public",
+        "category_id": "24",
+        "made_for_kids": False,
+        "notify_subscribers": True,
+        "upload_thumbnail": True,
+    })
 
     return config
