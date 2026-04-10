@@ -11,31 +11,71 @@ from pathlib import Path
 # Subreddit → hashtag mapping
 # ---------------------------------------------------------------------------
 _SUBREDDIT_TAGS: dict[str, list[str]] = {
-    "amitheasshole":      ["#AITA", "#AmITheAsshole", "#RedditStories"],
-    "relationship_advice":["#RelationshipAdvice", "#RedditStories"],
-    "tifu":               ["#TIFU", "#RedditStories"],
-    "pettyrevenge":       ["#PettyRevenge", "#RedditStories"],
-    "maliciouscompliance":["#MaliciousCompliance", "#RedditStories"],
-    "askreddit":          ["#AskReddit", "#RedditStories"],
-    "steam":              ["#Steam", "#Gaming", "#PCGaming"],
-    "pcgaming":           ["#PCGaming", "#Gaming", "#Steam"],
+    "amitheasshole":       ["#AITA", "#AmITheAsshole", "#RedditStories"],
+    "relationship_advice": ["#RelationshipAdvice", "#RedditStories"],
+    "tifu":                ["#TIFU", "#RedditStories"],
+    "pettyrevenge":        ["#PettyRevenge", "#RedditStories"],
+    "maliciouscompliance": ["#MaliciousCompliance", "#RedditStories"],
+    "askreddit":           ["#AskReddit", "#RedditStories"],
+    "steam":               ["#Steam", "#Gaming", "#PCGaming"],
+    "pcgaming":            ["#PCGaming", "#Gaming", "#Steam"],
+    "manga":               ["#Manga", "#Anime", "#RedditStories"],
+    "manhwa":              ["#Manhwa", "#Webtoon", "#RedditStories"],
+    "buyitforlife":        ["#BuyItForLife", "#ProductReview", "#LifeHacks"],
+    "asianbeauty":         ["#AsianBeauty", "#Skincare", "#BeautyTips"],
 }
 
 # Prefixes to strip from Reddit titles before using as YouTube title
 _STRIP_PREFIXES = re.compile(
-    r"^(aita|wibta|wita|am i the asshole|am i wrong|am i being|tifu by|tifu:?)\s*(for|by|:)?\s*",
+    r"^(aita|wibta|wita|am i the asshole|am i wrong|am i being|tifu by|tifu:?"
+    r"|\[disc\]|\[title\]|\[chapter\s*\d*\]|\[review\])\s*(for|by|:)?\s*",
     re.IGNORECASE,
 )
 
 # Subreddit-level story type for the description intro sentence
 _SUBREDDIT_INTRO: dict[str, str] = {
-    "amitheasshole":      "A Redditor asks if they're wrong",
-    "relationship_advice":"A Redditor shares their relationship dilemma",
-    "tifu":               "A Redditor shares an embarrassing fail",
-    "pettyrevenge":       "A Redditor gets sweet petty revenge",
-    "maliciouscompliance":"A Redditor takes instructions a little too literally",
-    "steam":              "Steam community reacts",
-    "pcgaming":           "PC gamers react",
+    "amitheasshole":       "A Redditor asks if they're wrong",
+    "relationship_advice": "A Redditor shares their relationship dilemma",
+    "tifu":                "A Redditor shares an embarrassing fail",
+    "pettyrevenge":        "A Redditor gets sweet petty revenge",
+    "maliciouscompliance": "A Redditor takes instructions a little too literally",
+    "steam":               "Steam community reacts",
+    "pcgaming":            "PC gamers react",
+    "manga":               "Manga fans are discussing",
+    "manhwa":              "Manhwa fans are discussing",
+    "buyitforlife":        "Reddit found a life-changing product",
+    "asianbeauty":         "The beauty community recommends",
+}
+
+# Subreddit → emoji prefix for YouTube title (CTR boost)
+_TITLE_EMOJI: dict[str, str] = {
+    "amitheasshole":       "😤",
+    "relationship_advice": "💔",
+    "tifu":                "😬",
+    "pettyrevenge":        "😈",
+    "maliciouscompliance": "🙃",
+    "askreddit":           "🤔",
+    "steam":               "🎮",
+    "pcgaming":            "🖥️",
+    "manga":               "📖",
+    "manhwa":              "📖",
+    "buyitforlife":        "💡",
+    "asianbeauty":         "✨",
+}
+
+# Subreddit → description hook first line (shown before YouTube "Show more")
+_DESC_HOOK: dict[str, str] = {
+    "amitheasshole":       "📢 Reddit voted… and the comments are WILD 👇",
+    "relationship_advice": "💬 Real advice. What would YOU do? 👇",
+    "tifu":                "💀 This actually happened. Read it and cringe 👇",
+    "pettyrevenge":        "😈 Sometimes revenge is the only answer 👇",
+    "maliciouscompliance": "🙃 They asked for it… so he did exactly that 👇",
+    "steam":               "🎮 The gaming community has spoken 👇",
+    "pcgaming":            "🖥️ PC gamers react 👇",
+    "manga":               "📖 The manga community is talking about this 👇",
+    "manhwa":              "📖 Manhwa fans can't stop discussing this 👇",
+    "buyitforlife":        "💡 Reddit found a purchase that changes everything 👇",
+    "asianbeauty":         "✨ The beauty community's top recommendation 👇",
 }
 
 
@@ -48,21 +88,30 @@ class MetaGenerator:
 
     @staticmethod
     def generate_title(post, verdict: str | None = None) -> str:
-        """Return a YouTube Shorts hook title (≤60 chars)."""
+        """Return a YouTube Shorts hook title (≤60 chars) with emoji prefix."""
+        sub_key = post.subreddit.lower().split("+")[0]
+        emoji = _TITLE_EMOJI.get(sub_key, "")
+        emoji_prefix = f"{emoji} " if emoji else ""
+
         text = _STRIP_PREFIXES.sub("", post.title).strip()
         # Capitalise first letter
         if text:
             text = text[0].upper() + text[1:]
-        # Ensure something remains
         if not text:
             text = post.title.strip()
-        # Truncate at word boundary (≤60 chars including ellipsis)
-        if len(text) > 60:
-            text = text[:59].rsplit(" ", 1)[0].rstrip(",.") + "…"
+
+        # Reserve space: emoji_prefix + text + optional "…" (3) + optional " (NTA)" (6)
+        max_text = 60 - len(emoji_prefix) - 3
+        if len(text) > max_text:
+            text = text[:max_text].rsplit(" ", 1)[0].rstrip(",.") + "…"
+
+        base = f"{emoji_prefix}{text}"
+
         # Append verdict badge if it fits
-        if verdict and len(text) + len(f" ({verdict})") <= 60:
-            text = f"{text} ({verdict})"
-        return text
+        if verdict and len(base) + len(f" ({verdict})") <= 60:
+            base = f"{base} ({verdict})"
+
+        return base[:60]
 
     @staticmethod
     def generate_hashtags(post, verdict: str | None = None) -> str:
@@ -84,11 +133,17 @@ class MetaGenerator:
 
     @staticmethod
     def generate_description(post, verdict: str | None = None) -> str:
-        """Return a YouTube description with story summary + hashtags + CTA."""
+        """Return a YouTube description with hook + story summary + hashtags + CTA."""
         sub_key = post.subreddit.lower().split("+")[0]
-        intro = _SUBREDDIT_INTRO.get(sub_key, "A Redditor shares their story")
+
+        # Hook first line — shown before YouTube "Show more", drives CTR
+        hook = _DESC_HOOK.get(sub_key)
+        if not hook:
+            intro = _SUBREDDIT_INTRO.get(sub_key, "A Redditor shares their story")
+            hook = f"{intro} 👇"
 
         # Build 1-sentence summary from body (first 120 chars) or title
+        intro = _SUBREDDIT_INTRO.get(sub_key, "A Redditor shares their story")
         source = (post.body or post.title).strip()
         # Strip markdown-ish noise
         source = re.sub(r"\*+|#+|`+", "", source)
@@ -104,15 +159,16 @@ class MetaGenerator:
         hashtags = MetaGenerator.generate_hashtags(post, verdict=verdict)
         cta = "🔔 Subscribe for daily Reddit stories"
 
-        verdict_line = f"The internet says: {verdict}\n\n" if verdict else ""
-        desc = f"{verdict_line}{summary}\n\n{hashtags}\n{cta}"
+        verdict_line = f"Reddit voted: {verdict} 🏆\n\n" if verdict else ""
+        desc = f"{hook}\n\n{summary}\n\n{verdict_line}{hashtags}\n{cta}"
 
         # Hard cap 500 chars (YouTube shows ~250 before "Show more")
         if len(desc) > 500:
             # Shorten summary only
-            max_summary = 500 - len(f"{verdict_line}\n\n{hashtags}\n{cta}") - 5
+            fixed = f"{hook}\n\n\n\n{verdict_line}{hashtags}\n{cta}"
+            max_summary = 500 - len(fixed) - 5
             summary = summary[:max_summary].rsplit(" ", 1)[0] + "…"
-            desc = f"{verdict_line}{summary}\n\n{hashtags}\n{cta}"
+            desc = f"{hook}\n\n{summary}\n\n{verdict_line}{hashtags}\n{cta}"
 
         return desc
 

@@ -344,8 +344,8 @@ class TestMetaWithVerdict:
     def test_description_verdict_first_line(self):
         from utils.meta_generator import MetaGenerator
         desc = MetaGenerator.generate_description(self._post(), verdict="NTA")
-        assert desc.startswith("The internet says: NTA"), \
-            f"Description should start with verdict line: {desc[:80]}"
+        assert "Reddit voted: NTA" in desc, \
+            f"Description should contain verdict line: {desc[:120]}"
 
     def test_hashtags_include_verdict_tag(self):
         from utils.meta_generator import MetaGenerator
@@ -358,7 +358,7 @@ class TestMetaWithVerdict:
         title_with = MetaGenerator.generate_title(self._post())
         assert title_no == title_with, "No verdict should produce same title as default"
         desc = MetaGenerator.generate_description(self._post(), verdict=None)
-        assert "The internet says:" not in desc
+        assert "Reddit voted:" not in desc
 
 
 # ─────────────────────────────────────────────

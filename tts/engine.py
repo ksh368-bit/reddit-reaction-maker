@@ -498,14 +498,24 @@ class TTSEngine:
             if len(body_text) > 1000:
                 cta_text = "Comment NTA or YTA below — and catch Part 2 for what happens next."
                 cta_path = os.path.join(temp_dir, "cta.mp3")
-                result_cta = self.generate_audio(cta_text, cta_path)
+                result_cta = self.generate_audio(cta_text, cta_path, capture_boundaries=use_karaoke)
                 if result_cta:
-                    cta_audio = result_cta[0] if isinstance(result_cta, tuple) else result_cta
+                    if use_karaoke and isinstance(result_cta, tuple):
+                        cta_audio, cta_word_events = result_cta
+                        cta_word_segs = split_into_word_segments(cta_word_events)
+                    else:
+                        cta_audio = result_cta[0] if isinstance(result_cta, tuple) else result_cta
+                        cta_word_segs = []
+
+                    tts_text_cta = self.prepare_tts_text(cta_text)
+                    if not cta_word_segs:
+                        cta_word_segs = whisper_word_segments(cta_audio, tts_text_cta)
+
                     segments.append({
                         "type": "cta",
-                        "text": cta_text,
+                        "text": tts_text_cta,
                         "audio_path": cta_audio,
-                        "word_segments": [],
+                        "word_segments": cta_word_segs,
                     })
 
         # Comments — capture word boundaries for karaoke captions.

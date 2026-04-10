@@ -42,7 +42,7 @@ filename_template = "steam_{post_id}_{date}"
 history_file = "output/steam/history.json"
 
 [youtube]
-enabled = false
+enabled = true
 credentials_path = "credentials.json"
 token_path = "token.json"
 privacy = "public"

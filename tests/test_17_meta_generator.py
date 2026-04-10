@@ -62,7 +62,9 @@ class TestYouTubeTitle:
     def test_title_capitalised(self):
         post = make_post(title="aita for something")
         title = MetaGenerator.generate_title(post)
-        assert title[0].isupper()
+        # Strip leading emoji/space before checking capitalisation
+        text_part = title.lstrip("😤😬😈🙃🤔🎮🖥️📖💡✨ ")
+        assert text_part[0].isupper()
 
     def test_steam_title_keeps_game_context(self):
         post = make_post(
@@ -162,3 +164,106 @@ class TestSaveMetaFile:
             Path(video_path).touch()
             meta_path = MetaGenerator.save_meta(post, video_path)
             assert "my_video" in meta_path
+
+
+# ─────────────────────────────────────────────
+#  CTR optimization tests
+# ─────────────────────────────────────────────
+
+class TestTitleCTR:
+    def test_title_has_emoji_for_aita(self):
+        post = make_post(title="AITA for telling my boss off?", subreddit="amitheasshole")
+        title = MetaGenerator.generate_title(post)
+        assert "😤" in title
+
+    def test_title_has_emoji_for_tifu(self):
+        post = make_post(title="TIFU by sending the wrong email", subreddit="tifu")
+        title = MetaGenerator.generate_title(post)
+        assert "😬" in title
+
+    def test_title_has_emoji_for_steam(self):
+        post = make_post(title="Thanks Bethesda", subreddit="Steam")
+        title = MetaGenerator.generate_title(post)
+        assert "🎮" in title
+
+    def test_title_has_emoji_for_manga(self):
+        post = make_post(
+            title="[DISC] The Hunter, Into The Wolf's Belly - Oneshot",
+            subreddit="manga",
+        )
+        title = MetaGenerator.generate_title(post)
+        assert "📖" in title
+
+    def test_title_max_60_chars_with_emoji(self):
+        post = make_post(
+            title="AITA for doing something very long that might overflow the title limit easily?",
+            subreddit="amitheasshole",
+        )
+        title = MetaGenerator.generate_title(post)
+        assert len(title) <= 60, f"Title too long ({len(title)}): {title!r}"
+
+    def test_title_strips_manga_disc_prefix(self):
+        post = make_post(
+            title="[DISC] The Hunter, Into The Wolf's Belly - Oneshot",
+            subreddit="manga",
+        )
+        title = MetaGenerator.generate_title(post)
+        assert "[DISC]" not in title
+        assert "Hunter" in title
+
+    def test_title_strips_manga_title_prefix(self):
+        post = make_post(title="[TITLE] Solo Leveling Season 2", subreddit="manga")
+        title = MetaGenerator.generate_title(post)
+        assert "[TITLE]" not in title
+        assert "Solo Leveling" in title
+
+    def test_title_has_emoji_for_products(self):
+        post = make_post(
+            title="What's a totally unsexy purchase that changed your life?",
+            subreddit="BuyItForLife",
+        )
+        title = MetaGenerator.generate_title(post)
+        assert "💡" in title
+
+
+class TestDescriptionCTR:
+    def test_description_first_line_has_hook(self):
+        post = make_post(subreddit="amitheasshole")
+        desc = MetaGenerator.generate_description(post)
+        first_line = desc.strip().split("\n")[0]
+        assert "👇" in first_line, f"Expected hook in first line, got: {first_line!r}"
+
+    def test_description_verdict_highlighted(self):
+        post = make_post(subreddit="amitheasshole")
+        desc = MetaGenerator.generate_description(post, verdict="NTA")
+        assert "Reddit voted" in desc
+        assert "NTA" in desc
+
+    def test_description_manga_has_hook(self):
+        post = make_post(
+            title="[DISC] Solo Leveling ch.200",
+            subreddit="manga",
+        )
+        desc = MetaGenerator.generate_description(post)
+        first_line = desc.strip().split("\n")[0]
+        assert "👇" in first_line
+
+    def test_description_products_has_hook(self):
+        post = make_post(
+            title="Best unsexy purchase of your life?",
+            subreddit="BuyItForLife",
+        )
+        desc = MetaGenerator.generate_description(post)
+        first_line = desc.strip().split("\n")[0]
+        assert "👇" in first_line
+
+    def test_description_tifu_has_hook(self):
+        post = make_post(title="TIFU by sending the wrong email", subreddit="tifu")
+        desc = MetaGenerator.generate_description(post)
+        first_line = desc.strip().split("\n")[0]
+        assert "👇" in first_line
+
+    def test_description_under_500_chars_with_hook(self):
+        post = make_post(body="x" * 1000, subreddit="amitheasshole")
+        desc = MetaGenerator.generate_description(post, verdict="NTA")
+        assert len(desc) <= 500

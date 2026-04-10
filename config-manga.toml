@@ -39,7 +39,7 @@ filename_template = "manga_{post_id}_{date}"
 history_file = "output/manga/history.json"
 
 [youtube]
-enabled = false
+enabled = true
 credentials_path = "credentials.json"
 token_path = "token.json"
 privacy = "public"

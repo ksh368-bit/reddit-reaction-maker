@@ -502,7 +502,7 @@ class VideoComposer:
                 clamped_display = min(display_dur, total_duration - start)
 
                 word_segs = seg.get("word_segments", [])
-                if word_segs and seg.get("type") in ("comment", "body", "hook"):
+                if word_segs and seg.get("type") in ("comment", "body", "hook", "cta"):
                     # ── Karaoke: one word-caption clip per word ──
                     self._add_karaoke_clips(
                         overlay_clips, word_segs, start, audio_dur,

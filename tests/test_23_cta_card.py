@@ -119,39 +119,3 @@ class TestCtaSegmentType:
                 f"CTA segment must have empty word_segments, got: {seg.get('word_segments')}"
             )
 
-
-# ─────────────────────────────────────────────
-#  CTA no karaoke (source inspection)
-# ─────────────────────────────────────────────
-
-class TestCtaNoKaraoke:
-    def test_karaoke_not_applied_to_cta(self):
-        """
-        In composer.py, karaoke condition must NOT include 'cta'.
-        Check source code directly.
-        """
-        from video.composer import VideoComposer
-        src = inspect.getsource(VideoComposer.compose_video)
-        # Find the karaoke condition line
-        assert '"cta"' not in src.split('_add_karaoke_clips')[0].split(
-            'seg.get("type") in'
-        )[-1].split('\n')[0], (
-            "'cta' must not be in the karaoke type condition"
-        )
-
-    def test_cta_not_in_karaoke_types(self):
-        """
-        Simpler check: the tuple of types eligible for karaoke
-        must not include 'cta'.
-        """
-        from video.composer import VideoComposer
-        src = inspect.getsource(VideoComposer.compose_video)
-        # The karaoke condition is: seg.get("type") in ("comment", "body", "hook")
-        # Verify "cta" is not in this tuple
-        import re
-        match = re.search(r'seg\.get\("type"\)\s+in\s+\(([^)]+)\)', src)
-        if match:
-            karaoke_types = match.group(1)
-            assert '"cta"' not in karaoke_types, (
-                f"'cta' found in karaoke types: {karaoke_types}"
-            )
