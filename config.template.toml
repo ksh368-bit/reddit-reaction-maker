@@ -1,53 +1,228 @@
 # Reddit Shorts Video Maker - Configuration Template
-# Copy this file to config.toml and adjust for your channel.
+# ============================================================================
+# Copy this file to config.toml and customize for your channel.
+# No API keys required! Uses Reddit's public .json endpoints.
+#
+# FEATURES:
+#  • Fetch top posts from any subreddit (no API key needed)
+#  • Process text files or batch directories
+#  • Multi-language TTS (EdgeTTS or gTTS)
+#  • Word-level karaoke captions with Whisper
+#  • YouTube auto-upload with OAuth2
+#  • Automatic metrics and logging
+#
+# QUICK START:
+#  1. Copy to config.toml: cp config.template.toml config.toml
+#  2. Customize [reddit] and [tts] sections
+#  3. Run: python main.py --limit 1
+#
+# CONFIG PRECEDENCE:
+#  CLI flags > environment variables > config.toml > hardcoded defaults
+# ============================================================================
 
 [reddit]
-subreddit = "roblox"
-post_limit = 5          # Number of posts to fetch per run
-min_upvotes = 100       # Minimum upvotes to consider
-min_comments = 10       # Minimum comments on post
-max_comment_length = 200  # Max characters per comment (shorter = punchier)
-top_comments = 4        # At ~20s/comment, 4 comments fills a ~55s Short
+# Reddit data source configuration
+subreddit = "roblox"        # Subreddit to fetch from (or comma-separated list for multireddit)
+post_limit = 5              # Max posts to process per run
+min_upvotes = 100           # Minimum post score (upvotes)
+min_comments = 10           # Minimum comments required (ensures discussion)
+max_comment_length = 200    # Truncate comments >200 chars (shorter = punchier audio)
+top_comments = 4            # Number of comments to include (~20s each = ~60s Short)
+
+# TIME FILTERS (use with CLI flag --time):
+#  --time hour   = top posts from last hour
+#  --time day    = top posts from last 24h (default: week)
+#  --time week   = top posts from last 7 days
+#  --time month  = top posts from last 30 days
+#  --time year   = top posts from last 365 days
+#  --time all    = all-time top posts (caution: very old content)
+
+# COMMON SUBREDDITS:
+#  Stories: amitheasshole, relationship_advice, tifu, pettyrevenge, maliciouscompliance
+#  Gaming: steam, pcgaming, gaming, leagueoflegends, WoW
+#  Anime: manga, manhwa, anime, anime_irl
+#  Lifestyle: fitness, loseit, personalfinance, skincare, asianbeauty
+#  Tech: programming, learnprogramming, webdev, python, javascript
+#  General: askreddit, todayilearned, lifeprotips
+
 
 [tts]
-engine = "edge-tts"     # Options: edge-tts (best), gtts
-language = "en"         # Language code: en, ko, ja, etc.
-voice = "en-US-GuyNeural"  # edge-tts voice (edge-tts --list-voices for options)
-rate = "+20%"           # edge-tts speed (+20% = faster, natural Shorts pacing)
-slow = false            # gTTS only: slower speech
+# Text-to-speech configuration
+# Choose provider: EdgeTTS is faster & more natural, gTTS is free & multilingual
+
+engine = "edge-tts"         # Options: "edge-tts" (recommended), "gtts" (free)
+language = "en"             # Language code (en=English, ko=Korean, ja=Japanese, es=Spanish, etc.)
+
+# EDGE-TTS VOICES (fast, natural, free via Microsoft):
+#   English: en-US-GuyNeural, en-US-AmberNeural, en-US-AriaNeural
+#   UK: en-GB-RyanNeural, en-GB-SoniaNeural
+#   Other: de-DE-BertNeural (German), fr-FR-DeniseNeural (French), etc.
+#   List all: edge-tts --list-voices
+voice = "en-US-GuyNeural"   # EdgeTTS voice (ignored if engine=gtts)
+rate = "+20%"               # Speech speed: +0% (normal), +20% (faster, good for Shorts)
+
+# GTTS OPTIONS (only if engine = gtts):
+slow = false                # gTTS only: true=slower speech, false=normal speed
+
 
 [video]
-width = 1080
-height = 1920
-fps = 30
-max_duration = 58       # Max seconds (YouTube Shorts limit is 60)
-background_dir = "assets/backgrounds"
-font = "assets/fonts/Montserrat-Bold.ttf"
-title_font_size = 52
-comment_font_size = 42
-text_color = "white"
-text_stroke_color = "black"
-text_stroke_width = 3
-watermark = "r/roblox"
-opacity = 0.45          # Background dimming (0.0=bright, 1.0=black)
-bgm_enabled = true      # Background music on/off
-bgm_volume = 0.08       # BGM volume — keep well below TTS voice level
+# Video rendering configuration (YouTube Shorts spec: 1080x1920)
 
-# Render parameters (tunable for different aesthetics)
-zoom_scale_min = 1.06   # Minimum zoom level for punch effect
-zoom_scale_max = 1.08   # Maximum zoom level for punch effect
-zoom_duration = 0.35    # Duration of zoom punch effect (seconds)
-bgm_ducking_factor = 0.35  # BGM volume reduction when TTS playing (0.0-1.0)
-caption_chunk_size = 2   # Words per karaoke caption chunk (2-4 recommended)
-caption_lead_time = 0.1  # Seconds before word spoken to show caption (0.05-0.2)
-fade_in_duration = 0.15  # Segment fade-in duration (seconds)
-fade_out_duration = 0.3  # Segment fade-out duration (seconds)
+# DIMENSIONS:
+width = 1080                # Video width (YouTube Shorts standard)
+height = 1920               # Video height (9:16 aspect ratio required)
+fps = 30                    # Frames per second (30 = smooth, < CPU usage)
+max_duration = 58           # Max video length in seconds (YouTube Shorts limit is 60)
+
+# ASSETS:
+background_dir = "assets/backgrounds"  # Directory of background gameplay clips
+font = "assets/fonts/Montserrat-Bold.ttf"  # Font for text overlays (TrueType file)
+
+# TEXT APPEARANCE:
+title_font_size = 52        # Font size for post title card
+comment_font_size = 42      # Font size for comment cards
+text_color = "white"        # Text color (CSS: white, #FFFFFF, rgb(255,255,255))
+text_stroke_color = "black" # Text outline color (makes text readable on any background)
+text_stroke_width = 3       # Outline thickness (pixels)
+
+# VIDEO EFFECTS:
+watermark = "r/roblox"      # Text overlay (lower-right corner, use subreddit name)
+opacity = 0.45              # Background dimming: 0.0 (bright) → 1.0 (black)
+
+# AUDIO:
+bgm_enabled = true          # Include background music (true/false)
+bgm_volume = 0.08           # BGM volume (0.0-1.0): keep low so TTS voice is dominant
+
+# RENDER PARAMETERS (tune for different aesthetics):
+# These don't affect quality, just visual style. Adjust to your preference.
+
+zoom_scale_min = 1.06       # Hook card zoom: 1.0 (no zoom) → 1.1 (10% larger)
+zoom_scale_max = 1.08       # Other cards zoom (subtle motion to hold attention)
+zoom_duration = 0.35        # Zoom effect duration (0.2s = quick, 0.5s = slow)
+
+bgm_ducking_factor = 0.35   # BGM reduction when TTS playing
+                            # 0.0 = mute BGM during speech
+                            # 0.5 = reduce BGM to 50% volume
+                            # 1.0 = no ducking (full volume during speech)
+
+# CAPTIONS (for karaoke sync):
+caption_chunk_size = 2      # Words per caption chunk (2=tight, 3-4=looser)
+caption_lead_time = 0.1     # Show caption before word spoken (0.05-0.2 seconds)
+
+# TRANSITIONS (segment fades):
+fade_in_duration = 0.15     # Fade-in effect (0.1s = quick, 0.3s = slow)
+fade_out_duration = 0.3     # Fade-out effect (0.1s = quick, 0.5s = slow)
+
 
 [output]
-dir = "output"
-filename_template = "{subreddit}_{post_id}_{date}"
-history_file = "output/history.json"
+# Output files and history tracking
+
+dir = "output"              # Directory to save generated videos
+filename_template = "{subreddit}_{post_id}_{date}"  # Filename pattern
+                                                     # Variables: {subreddit}, {post_id}, {date}
+history_file = "output/history.json"  # Track processed posts (prevents duplicates)
+
+# OUTPUT STRUCTURE:
+#  output/
+#  ├── roblox_abc123_2026-04-14.mp4    (video file)
+#  ├── roblox_abc123_2026-04-14_meta.txt (YouTube metadata)
+#  ├── roblox_abc123_2026-04-14_thumb.png (video thumbnail)
+#  ├── _metrics/
+#  │   └── metrics_20260414_101500.json (performance metrics)
+#  ├── _cards_abc123/                  (temporary card images)
+#  ├── history.json                    (processed post tracking)
+#  └── logs/
+#      └── 2026-04-14.log              (daily logs)
+
 
 [logging]
-level = "INFO"              # Options: DEBUG, INFO, WARNING, ERROR
-log_dir = "output/logs"     # Directory for log files (rotated daily, 10MB max each)
+# Application logging configuration
+
+level = "INFO"              # Options: DEBUG (verbose), INFO, WARNING, ERROR
+                            # DEBUG = log every operation (debugging)
+                            # INFO = normal operation (recommended)
+                            # WARNING = only issues
+                            # ERROR = only failures
+
+log_dir = "output/logs"     # Directory for log files
+                            # Files: 2026-04-14.log, 2026-04-15.log (daily rotation)
+                            # Max: 10MB per file, keeps last 10 files
+                            # Automatic cleanup of old logs
+
+
+[youtube]
+# YouTube upload configuration (optional)
+# Leave enabled = false to generate videos without uploading
+
+enabled = false             # Set to true to enable YouTube auto-upload
+
+credentials_path = "credentials.json"  # OAuth2 credentials file (from Google Cloud Console)
+token_path = "token.json"             # OAuth2 token (auto-created on first run)
+
+privacy = "public"          # Options: "public", "unlisted", "private"
+                            # public = visible on channel and YouTube search
+                            # unlisted = hidden from search, visible via link only
+                            # private = only you can view
+
+category_id = "24"          # YouTube category ID:
+                            # 20 = gaming, 24 = entertainment, 27 = short movies
+                            # See: https://developers.google.com/youtube/v3/docs/videoCategories/list
+
+made_for_kids = false       # FTC disclosure: is video made for children?
+notify_subscribers = true   # Send notification to channel subscribers when uploaded
+upload_thumbnail = true     # Upload auto-generated thumbnail (recommended)
+
+# SETUP INSTRUCTIONS (if enabled=true):
+#  1. Go to Google Cloud Console (https://console.cloud.google.com/)
+#  2. Create project → Enable YouTube Data API v3
+#  3. Create OAuth2 credentials (Desktop app)
+#  4. Download JSON → Save as credentials.json
+#  5. Run once: python main.py --limit 1
+#  6. Browser opens → authorize access → token.json created
+#  7. Future runs upload automatically
+
+
+# ============================================================================
+# ENVIRONMENT VARIABLE OVERRIDES
+# ============================================================================
+#
+# For CI/CD, set environment variables instead of editing config.toml:
+#
+#   export REDDIT_SUBREDDIT=steam
+#   export TTS_ENGINE=gtts
+#   export TTS_VOICE=en-US-AmberNeural
+#   export YOUTUBE_ENABLED=true
+#   export DATADOG_API_KEY=your-api-key
+#
+# Variables override config.toml values.
+
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+#
+# 1. Generate video from r/steam (default settings):
+#    python main.py --subreddit steam --limit 1
+#
+# 2. Process text file (no Reddit required):
+#    python main.py --file story.txt
+#
+# 3. Batch process directory of text files:
+#    python main.py --dir scripts/
+#
+# 4. Top posts from today only:
+#    python main.py --time day
+#
+# 5. Auto-upload to YouTube:
+#    • Set [youtube] enabled = true
+#    • Run: python main.py --limit 1
+#
+# 6. Docker (no local setup needed):
+#    docker build -t reddit-shorts .
+#    docker run -v $(pwd)/output:/app/output reddit-shorts --limit 1
+#
+# 7. Different TTS voices per run:
+#    python main.py --limit 1  # Uses config.toml voice
+#    TTS_VOICE=en-US-AriaNeural python main.py --limit 1  # Override
+#
+# ============================================================================

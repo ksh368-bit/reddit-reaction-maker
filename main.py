@@ -181,28 +181,112 @@ def process_post(post, tts_engine: TTSEngine, composer: VideoComposer, scraper, 
 def main():
     console.print(BANNER)
 
-    # Parse arguments
-    parser = argparse.ArgumentParser(description="Roblox Shorts Video Maker")
+    # Parse arguments with comprehensive help
+    parser = argparse.ArgumentParser(
+        prog="reddit-shorts",
+        description="🎬 Automated YouTube Shorts generator from Reddit posts (no API key required)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+EXAMPLES:
+  Fetch top posts from r/roblox this week:
+    %(prog)s --limit 1
+
+  Fetch top posts from r/steam today:
+    %(prog)s --subreddit steam --time day --limit 3
+
+  Process specific Reddit post:
+    %(prog)s --post abc123def456
+
+  Process local text file (no Reddit needed):
+    %(prog)s --file story.txt
+
+  Batch process directory of text files:
+    %(prog)s --dir scripts/
+
+  Use custom config file:
+    %(prog)s --config my_config.toml --limit 1
+
+FEATURES:
+  • Multi-language TTS (EdgeTTS or gTTS)
+  • Word-level karaoke captions with Whisper
+  • Auto-upload to YouTube with OAuth2
+  • Automatic metrics & logging to output/logs/
+  • Configurable via config.toml (no CLI flag needed)
+
+CONFIGURATION:
+  See config.template.toml for all options:
+    cp config.template.toml config.toml
+    # Edit config.toml...
+    %(prog)s
+
+  CLI flags override config.toml values.
+
+QUICK START:
+  1. python %(prog)s --limit 1                 (default: r/roblox, top this week)
+  2. Check output/ for generated videos
+  3. Enable YouTube upload in config.toml if desired
+
+For detailed help, see: https://github.com/SeungheeKim/reddit-reaction-maker
+        """
+    )
 
     # Source options (mutually exclusive group)
     source_group = parser.add_mutually_exclusive_group()
-    source_group.add_argument("--post", type=str, help="Specific Reddit post ID")
-    source_group.add_argument("--file", type=str, help="Text file to create video from")
-    source_group.add_argument("--dir", type=str, help="Directory of .txt files to process")
+    source_group.add_argument(
+        "--post",
+        type=str,
+        metavar="POST_ID",
+        help="Process specific Reddit post by ID (e.g., abc123def456)"
+    )
+    source_group.add_argument(
+        "--file",
+        type=str,
+        metavar="FILE",
+        help="Create video from text file (no Reddit API needed)"
+    )
+    source_group.add_argument(
+        "--dir",
+        type=str,
+        metavar="DIRECTORY",
+        help="Batch process all .txt files in directory"
+    )
 
     # Reddit options
-    parser.add_argument("--subreddit", type=str, help="Subreddit to fetch from (default: roblox)")
-    parser.add_argument("--limit", type=int, help="Maximum number of posts to process")
+    parser.add_argument(
+        "--subreddit",
+        type=str,
+        metavar="SUBREDDIT",
+        help="Subreddit to fetch from (default: from config.toml)"
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        metavar="N",
+        help="Maximum number of posts to process (default: from config.toml)"
+    )
     parser.add_argument(
         "--time",
         type=str,
         default="week",
         choices=["hour", "day", "week", "month", "year", "all"],
-        help="Time filter for top posts (default: week)",
+        metavar="PERIOD",
+        help="Time filter for top posts: hour, day, week (default), month, year, all"
     )
 
     # General options
-    parser.add_argument("--config", type=str, default="config.toml", help="Config file path")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="config.toml",
+        metavar="FILE",
+        help="Config file path (default: config.toml)"
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s 1.0.0"
+    )
+
     args = parser.parse_args()
 
     # Load config
