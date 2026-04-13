@@ -1,16 +1,62 @@
 """Text-to-Speech engine with pluggable providers."""
 
 import asyncio
+import logging
 import os
 import re
 import tempfile
+import time
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from gtts import gTTS
 from rich.console import Console
 
 console = Console()
+logger = logging.getLogger(__name__)
+
+# ─────────────────────────────────────────────
+# Whisper model cache (singleton, loaded once)
+# ─────────────────────────────────────────────
+_WHISPER_MODEL_CACHE = None
+
+
+def _get_whisper_model():
+    """Get or load Whisper tiny model (cached singleton)."""
+    global _WHISPER_MODEL_CACHE
+    if _WHISPER_MODEL_CACHE is None:
+        try:
+            from faster_whisper import WhisperModel
+            _WHISPER_MODEL_CACHE = WhisperModel("tiny", device="cpu", compute_type="int8")
+        except ImportError:
+            _WHISPER_MODEL_CACHE = False  # Mark as "not available"
+    return _WHISPER_MODEL_CACHE if _WHISPER_MODEL_CACHE is not False else None
+
+
+def _retry_with_backoff(func, max_retries: int = 2, initial_delay: float = 1.0):
+    """
+    Retry a function call with exponential backoff.
+
+    Args:
+        func: Callable that may fail
+        max_retries: Number of retry attempts (total attempts = max_retries + 1)
+        initial_delay: Starting delay in seconds (doubles each retry)
+
+    Returns:
+        The result of func() if successful, None if all retries exhausted.
+    """
+    delay = initial_delay
+    for attempt in range(max_retries + 1):
+        try:
+            return func()
+        except (TimeoutError, ConnectionError, OSError) as e:
+            if attempt >= max_retries:
+                logger.error(f"Failed after {max_retries + 1} attempts: {e}")
+                return None
+            logger.warning(f"Attempt {attempt + 1} failed, retrying in {delay}s: {e}")
+            time.sleep(delay)
+            delay *= 2  # Exponential backoff
 
 
 def count_syllables(word: str) -> int:
@@ -70,10 +116,11 @@ def whisper_word_segments(
         if not audio_path or not Path(audio_path).exists():
             raise FileNotFoundError(audio_path)
 
-        from faster_whisper import WhisperModel
+        # Use cached model (loaded once, reused for all calls)
+        model = _get_whisper_model()
+        if model is None:
+            raise ImportError("faster_whisper not installed")
 
-        # Load model (cached after first call)
-        model = WhisperModel("tiny", device="cpu", compute_type="int8")
         segments, _ = model.transcribe(
             audio_path,
             word_timestamps=True,
@@ -411,12 +458,26 @@ class TTSEngine:
         try:
             Path(output_path).parent.mkdir(parents=True, exist_ok=True)
             if capture_boundaries and isinstance(self.provider, EdgeTTS):
-                path, events = self.provider.generate_with_boundaries(cleaned, output_path)
-                return path, events
+                # Wrap with retry logic
+                result = _retry_with_backoff(
+                    lambda: self.provider.generate_with_boundaries(cleaned, output_path),
+                    max_retries=2,
+                    initial_delay=1.0
+                )
+                if result:
+                    path, events = result
+                    return path, events
+                return None
             else:
-                self.provider.generate(cleaned, output_path)
-                return output_path
+                # Wrap provider.generate() with retry logic
+                result = _retry_with_backoff(
+                    lambda: self.provider.generate(cleaned, output_path) or output_path,
+                    max_retries=2,
+                    initial_delay=1.0
+                )
+                return result
         except Exception as e:
+            logger.error(f"TTS Error: {e}")
             console.print(f"[red]TTS Error: {e}[/red]")
             return None
 

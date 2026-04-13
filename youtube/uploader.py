@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -28,6 +29,31 @@ try:
 except ImportError:
     build = None          # type: ignore[assignment]
     MediaFileUpload = None  # type: ignore[assignment]
+
+
+def _retry_with_backoff(func, max_retries: int = 2, initial_delay: float = 1.0):
+    """
+    Retry a function call with exponential backoff on transient errors.
+
+    Args:
+        func: Callable that may fail
+        max_retries: Number of retry attempts (total attempts = max_retries + 1)
+        initial_delay: Starting delay in seconds (doubles each retry)
+
+    Returns:
+        The result of func() if successful, None if all retries exhausted.
+    """
+    delay = initial_delay
+    for attempt in range(max_retries + 1):
+        try:
+            return func()
+        except (TimeoutError, ConnectionError, OSError) as e:
+            if attempt >= max_retries:
+                logger.error(f"Failed after {max_retries + 1} attempts: {e}")
+                raise  # Re-raise to outer exception handler
+            logger.warning(f"Attempt {attempt + 1} failed, retrying in {delay}s: {e}")
+            time.sleep(delay)
+            delay *= 2  # Exponential backoff
 
 
 def _get_credentials(credentials_path: str, token_path: str):
@@ -84,7 +110,12 @@ def upload_video(
             )
             return None
 
-        creds = _get_credentials(credentials_path, token_path)
+        # Wrap credential retrieval with retry logic
+        creds = _retry_with_backoff(
+            lambda: _get_credentials(credentials_path, token_path),
+            max_retries=2,
+            initial_delay=1.0
+        )
         youtube = build("youtube", "v3", credentials=creds)
 
         tags = _parse_tags_from_description(description)
@@ -107,21 +138,31 @@ def upload_video(
         )
         request = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
 
+        # Wrap upload chunk streaming with retry logic
         response = None
         while response is None:
-            _, response = request.next_chunk()
+            _, response = _retry_with_backoff(
+                lambda: request.next_chunk(),
+                max_retries=2,
+                initial_delay=2.0  # Longer delay for uploads
+            )
 
         video_id: str = response["id"]
         logger.info("Uploaded: https://www.youtube.com/shorts/%s", video_id)
 
-        # Upload thumbnail if provided
+        # Upload thumbnail if provided (with retry logic)
         if thumb_path and Path(thumb_path).exists():
             try:
                 thumb_media = MediaFileUpload(thumb_path, mimetype="image/png")
-                youtube.thumbnails().set(
-                    videoId=video_id, media_body=thumb_media
-                ).execute()
-                logger.info("Thumbnail uploaded for video %s", video_id)
+                result = _retry_with_backoff(
+                    lambda: youtube.thumbnails().set(
+                        videoId=video_id, media_body=thumb_media
+                    ).execute(),
+                    max_retries=2,
+                    initial_delay=1.0
+                )
+                if result:
+                    logger.info("Thumbnail uploaded for video %s", video_id)
             except Exception as thumb_exc:
                 logger.warning("Thumbnail upload failed (video still uploaded): %s", thumb_exc)
 

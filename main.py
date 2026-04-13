@@ -16,6 +16,8 @@ Usage:
 """
 
 import argparse
+import logging
+import logging.handlers
 import os
 import sys
 import tempfile
@@ -29,7 +31,7 @@ from rich.table import Table
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from utils.config_loader import load_config
+from utils.config_loader import load_config, validate_config
 from utils.meta_generator import MetaGenerator
 from utils.verdict_extractor import extract_verdict
 from reddit.scraper import RedditScraper, TextFileScraper
@@ -38,6 +40,43 @@ from video.composer import VideoComposer
 from youtube.uploader import upload_video
 
 console = Console()
+
+
+def setup_logging(log_dir: str = "output/logs", level: str = "INFO") -> None:
+    """Configure file and console logging for the pipeline."""
+    os.makedirs(log_dir, exist_ok=True)
+
+    # Log file path: output/logs/YYYY-MM-DD.log
+    log_file = os.path.join(log_dir, datetime.now().strftime("%Y-%m-%d.log"))
+
+    # Get root logger
+    logger = logging.getLogger()
+    logger.setLevel(getattr(logging, level.upper(), logging.INFO))
+
+    # Only add handlers if not already added (avoid duplicates on multiple calls)
+    if not logger.handlers:
+        # File handler with daily rotation
+        file_handler = logging.handlers.RotatingFileHandler(
+            log_file, maxBytes=10*1024*1024, backupCount=10  # 10MB per file, keep 10
+        )
+        file_handler.setLevel(getattr(logging, level.upper(), logging.INFO))
+
+        # Console handler (minimal; Rich handles pretty output)
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.WARNING)  # Only warnings + errors to console
+
+        # Format
+        formatter = logging.Formatter(
+            "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        file_handler.setFormatter(formatter)
+        console_handler.setFormatter(formatter)
+
+        logger.addHandler(file_handler)
+        logger.addHandler(console_handler)
+
+        logging.getLogger("rich").setLevel(logging.WARNING)  # Reduce Rich noise
 
 BANNER = """
 [bold cyan]
@@ -144,6 +183,17 @@ def main():
     # Load config
     console.print("[cyan]Loading configuration...[/cyan]")
     config = load_config(args.config)
+
+    # Setup logging (file + console) - must be done early for validation logging
+    logging_cfg = config.get("logging", {})
+    setup_logging(
+        log_dir=logging_cfg.get("log_dir", "output/logs"),
+        level=logging_cfg.get("level", "INFO")
+    )
+
+    # Validate configuration
+    if not validate_config(config):
+        sys.exit(1)
 
     # Override config with CLI args
     if args.limit:

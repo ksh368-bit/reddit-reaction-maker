@@ -37,3 +37,7 @@ bgm_volume = 0.08       # BGM volume — keep well below TTS voice level
 dir = "output"
 filename_template = "{subreddit}_{post_id}_{date}"
 history_file = "output/history.json"
+
+[logging]
+level = "INFO"              # Options: DEBUG, INFO, WARNING, ERROR
+log_dir = "output/logs"     # Directory for log files (rotated daily, 10MB max each)
