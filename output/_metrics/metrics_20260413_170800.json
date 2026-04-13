@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-04-13T17:00:03.172728",
+  "start_time": 1776067203.1728268,
+  "tts_duration_sec": 12.459021806716919,
+  "video_composition_duration_sec": 410.1831500530243,
+  "youtube_upload_duration_sec": 4.1089160442352295,
+  "whisper_fallback_count": 0,
+  "background_type": null,
+  "post_virality_score": null,
+  "segments_count": 5,
+  "success": true,
+  "error_type": null,
+  "error_message": null,
+  "subreddit": "AmItheAsshole",
+  "post_id": "azvko1",
+  "youtube_video_id": "DtFcnIRLblI",
+  "end_time": 1776067680.499358,
+  "total_duration_sec": 477.3265311717987
+}

@@ -23,6 +23,7 @@ import sys
 import tempfile
 import shutil
 from datetime import datetime
+from pathlib import Path
 
 from rich.console import Console
 from rich.panel import Panel
@@ -35,6 +36,7 @@ from utils.config_loader import load_config, validate_config
 from utils.meta_generator import MetaGenerator
 from utils.metrics import MetricsCollector
 from utils.verdict_extractor import extract_verdict
+from utils.file_lock import file_lock
 from reddit.scraper import RedditScraper, TextFileScraper
 from tts.engine import TTSEngine
 from video.composer import VideoComposer
@@ -91,6 +93,52 @@ BANNER = """
 """
 
 
+def resolve_paths(config: dict) -> dict:
+    """
+    Resolve all relative paths in config to absolute paths.
+
+    Required for crontab environments where CWD is unpredictable.
+    Returns updated config with absolute paths.
+    """
+    def resolve_path(path_str: str) -> str:
+        if not path_str:
+            return path_str
+        p = Path(path_str)
+        if p.is_absolute():
+            return str(p)
+        # Relative to project root
+        project_root = Path(__file__).parent
+        return str((project_root / p).resolve())
+
+    # Resolve output paths
+    if "output" in config:
+        if "dir" in config["output"]:
+            config["output"]["dir"] = resolve_path(config["output"]["dir"])
+        if "history_file" in config["output"]:
+            config["output"]["history_file"] = resolve_path(config["output"]["history_file"])
+
+    # Resolve video assets
+    if "video" in config:
+        if "font" in config["video"]:
+            config["video"]["font"] = resolve_path(config["video"]["font"])
+        if "background_dir" in config["video"]:
+            config["video"]["background_dir"] = resolve_path(config["video"]["background_dir"])
+
+    # Resolve YouTube credentials
+    if "youtube" in config:
+        if "credentials_path" in config["youtube"]:
+            config["youtube"]["credentials_path"] = resolve_path(config["youtube"]["credentials_path"])
+        if "token_path" in config["youtube"]:
+            config["youtube"]["token_path"] = resolve_path(config["youtube"]["token_path"])
+
+    # Resolve logging
+    if "logging" in config:
+        if "log_dir" in config["logging"]:
+            config["logging"]["log_dir"] = resolve_path(config["logging"]["log_dir"])
+
+    return config
+
+
 def process_post(post, tts_engine: TTSEngine, composer: VideoComposer, scraper, config: dict, metrics: MetricsCollector | None = None) -> str | None:
     """Process a single post (Reddit or text file) into a Shorts video."""
     console.print(f"\n[bold]Processing: {post.title[:60]}...[/bold]")
@@ -133,9 +181,19 @@ def process_post(post, tts_engine: TTSEngine, composer: VideoComposer, scraper, 
                 metrics.mark_error("video_failed", "Video composition failed")
             return None
 
-        # Step 3: Save meta + history
+        # Step 3: Save meta + history (with locking for crontab safety)
         console.print("  [cyan][3/3] Updating history & saving meta...[/cyan]")
-        scraper.save_to_history(post.id)
+
+        # Use file lock to prevent concurrent writes in crontab environments
+        output_dir = config.get("output", {}).get("dir", "output")
+        lock_file = os.path.join(output_dir, ".history.lock")
+        try:
+            with file_lock(lock_file, timeout=10):
+                scraper.save_to_history(post.id)
+        except TimeoutError as e:
+            logger.warning(f"Could not acquire history lock (another process running?): {e}")
+            # Continue anyway, but note the warning
+
         verdict   = extract_verdict(post.comments) if post.comments else None
         meta_path = MetaGenerator.save_meta(post, output_path, verdict=verdict)
         console.print(f"  [dim]Meta: {os.path.basename(meta_path)}[/dim]")
@@ -293,6 +351,9 @@ For detailed help, see: https://github.com/SeungheeKim/reddit-reaction-maker
     console.print("[cyan]Loading configuration...[/cyan]")
     config = load_config(args.config)
 
+    # Resolve all paths to absolute for crontab compatibility
+    config = resolve_paths(config)
+
     # Setup logging (file + console) - must be done early for validation logging
     logging_cfg = config.get("logging", {})
     setup_logging(
@@ -392,4 +453,14 @@ For detailed help, see: https://github.com/SeungheeKim/reddit-reaction-maker
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+        sys.exit(0)
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Interrupted by user[/yellow]")
+        sys.exit(130)  # Standard exit code for SIGINT
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.exception("Unexpected error in main pipeline")
+        console.print(f"\n[red]Error: {e}[/red]")
+        sys.exit(1)

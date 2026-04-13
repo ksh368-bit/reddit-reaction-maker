@@ -1,0 +1,244 @@
+==========================================
+Daily run: 2026-04-10 17:00:00
+==========================================
+
+=== [AITA/Reddit] start: 17:00:00 ===
+
+
+ ____       _     _               ____  _                _
+|  _ \ ___ | |__ | | _____  __  / ___|| |__   ___  _ __| |_ ___
+| |_) / _ \| '_ \| |/ _ \ \/ /  \___ \| '_ \ / _ \| '__| __/ __|
+|  _ < (_) | |_) | | (_) >  <    ___) | | | | (_) | |  | |_\__ \
+|_| \_\___/|_.__/|_|\___/_/\_\  |____/|_| |_|\___/|_|   \__|___/
+
+Automated YouTube Shorts · No API Key Required
+
+Loading configuration...
+Initializing components...
+TTS Engine: Edge TTS (en-US-AriaNeural)
+Setting up background assets...
+  Ready: 17 video(s), 3 audio(s)
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Mode: Reddit Scraping (no API key)                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Fetching posts from r/tifu (time=week)...
+  [OK] TIFU by confronting my neighbor about his leaf blower and ac... (+7019, 2
+comments)
+  [OK] TIFU by being constipated for the last 22 years... (+5948, 2 comments)
+Found 1 eligible posts.
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Post 1/1                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Processing: TIFU by confronting my neighbor about his leaf blower and ac...
+  ID: 1sfa3yw | Score: 7019 | Comments: 2
+  [1/3] Generating TTS audio...
+  [OK] Generated 6 audio segments
+  [2/3] Composing video...
+Composing video for: TIFU by confronting my neighbor about his leaf blo...
+  [OK] Rendered 6 card(s)
+  Background: subway-surfers-1.mp4
+  BGM: lofi-study.mp3 (vol: 0.08)
+  Rendering 52.4s video...
+  [OK] Saved: 
+output/TIFU_by_confronting_my_neighbor_about_his_leaf_blower_and_accidentally_be
+coming_.mp4 (52.4s, 51.8MB)
+  [3/3] Updating history & saving meta...
+  Meta: 
+TIFU_by_confronting_my_neighbor_about_his_leaf_blower_and_accidentally_becoming_
+_meta.txt
+
+
+                                Generated Videos                                
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ # ┃ Title                           ┃ Score ┃ Output File                    ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 1 │ TIFU by confronting my neighbor │  7019 │ TIFU_by_confronting_my_neighb… │
+│   │ about his lea                   │       │                                │
+└───┴─────────────────────────────────┴───────┴────────────────────────────────┘
+
+[OK] Successfully generated 1 video(s)!
+Output directory: output/
+=== [AITA/Reddit] done ===
+
+=== [Steam] start: 17:09:17 ===
+
+
+ ____       _     _               ____  _                _
+|  _ \ ___ | |__ | | _____  __  / ___|| |__   ___  _ __| |_ ___
+| |_) / _ \| '_ \| |/ _ \ \/ /  \___ \| '_ \ / _ \| '__| __/ __|
+|  _ < (_) | |_) | | (_) >  <    ___) | | | | (_) | |  | |_\__ \
+|_| \_\___/|_.__/|_|\___/_/\_\  |____/|_| |_|\___/|_|   \__|___/
+
+Automated YouTube Shorts · No API Key Required
+
+Loading configuration...
+Initializing components...
+TTS Engine: Edge TTS (en-US-GuyNeural)
+Setting up background assets...
+  Ready: 17 video(s), 3 audio(s)
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Mode: Reddit Scraping (no API key)                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Fetching posts from r/Steam+pcgaming (time=week)...
+Found 0 eligible posts.
+  No new posts for time_filter='week', trying broader range...
+Fetching posts from r/Steam+pcgaming (time=month)...
+Found 0 eligible posts.
+  No new posts for time_filter='month', trying broader range...
+Fetching posts from r/Steam+pcgaming (time=year)...
+  [OK] Thanks Bethesda... (+66803, 5 comments)
+  [OK] What game had you like this ?... (+62904, 6 comments)
+  [OK] Was this review helpful?... (+62380, 5 comments)
+Found 1 eligible posts.
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Post 1/1                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Processing: Thanks Bethesda...
+  ID: 1k85d44 | Score: 66803 | Comments: 5
+  [1/3] Generating TTS audio...
+  [OK] Generated 6 audio segments
+  [2/3] Composing video...
+Composing video for: Thanks Bethesda...
+  [OK] Rendered 6 card(s)
+  Background: paper-cutting.mp4
+  BGM: lofi-study.mp3 (vol: 0.08)
+  Rendering 40.2s video...
+  [OK] Saved: output/steam/Thanks_Bethesda.mp4 (40.2s, 36.4MB)
+  [3/3] Updating history & saving meta...
+  Meta: Thanks_Bethesda_meta.txt
+
+
+                  Generated Videos                   
+┏━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┓
+┃ # ┃ Title           ┃ Score ┃ Output File         ┃
+┡━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━┩
+│ 1 │ Thanks Bethesda │ 66803 │ Thanks_Bethesda.mp4 │
+└───┴─────────────────┴───────┴─────────────────────┘
+
+[OK] Successfully generated 1 video(s)!
+Output directory: output/steam/
+=== [Steam] done ===
+
+=== [Manga] start: 17:17:08 ===
+
+
+ ____       _     _               ____  _                _
+|  _ \ ___ | |__ | | _____  __  / ___|| |__   ___  _ __| |_ ___
+| |_) / _ \| '_ \| |/ _ \ \/ /  \___ \| '_ \ / _ \| '__| __/ __|
+|  _ < (_) | |_) | | (_) >  <    ___) | | | | (_) | |  | |_\__ \
+|_| \_\___/|_.__/|_|\___/_/\_\  |____/|_| |_|\___/|_|   \__|___/
+
+Automated YouTube Shorts · No API Key Required
+
+Loading configuration...
+Initializing components...
+TTS Engine: Google TTS
+Setting up background assets...
+  Ready: 17 video(s), 3 audio(s)
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Mode: Reddit Scraping (no API key)                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Fetching posts from r/manga+manhwa (time=week)...
+  [OK] [DISC] The Hunter, Into The Wolf's Belly - Oneshot... (+5175, 6 comments)
+  [OK] [TITLE] Which Manhwa was it For You ?... (+3863, 6 comments)
+  [OK] [Return of Mount Hua Sect] IS RETURNING ON APRIL 14!!... (+3714, 4 
+comments)
+Found 1 eligible posts.
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Post 1/1                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Processing: [DISC] The Hunter, Into The Wolf's Belly - Oneshot...
+  ID: 1sccz9o | Score: 5175 | Comments: 6
+  [1/3] Generating TTS audio...
+  [OK] Generated 7 audio segments
+  [2/3] Composing video...
+Composing video for: [DISC] The Hunter, Into The Wolf's Belly - Oneshot...
+  [OK] Rendered 7 card(s)
+  Background: subway-surfers-1.mp4
+  BGM: lofi-chill.mp3 (vol: 0.12)
+  Rendering 54.6s video...
+  [OK] Saved: 
+output/manga/[DISC]_The_Hunter,_Into_The_Wolf's_Belly_-_Oneshot.mp4 (54.6s, 
+53.7MB)
+  [3/3] Updating history & saving meta...
+  Meta: [DISC]_The_Hunter,_Into_The_Wolf's_Belly_-_Oneshot_meta.txt
+
+
+                                Generated Videos                                
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ # ┃ Title                           ┃ Score ┃ Output File                    ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 1 │ [DISC] The Hunter, Into The     │  5175 │ [DISC]_The_Hunter,_Into_The_W… │
+│   │ Wolf's Belly - On               │       │                                │
+└───┴─────────────────────────────────┴───────┴────────────────────────────────┘
+
+[OK] Successfully generated 1 video(s)!
+Output directory: output/manga/
+=== [Manga] done ===
+
+=== [Products] start: 17:27:42 ===
+
+
+ ____       _     _               ____  _                _
+|  _ \ ___ | |__ | | _____  __  / ___|| |__   ___  _ __| |_ ___
+| |_) / _ \| '_ \| |/ _ \ \/ /  \___ \| '_ \ / _ \| '__| __/ __|
+|  _ < (_) | |_) | | (_) >  <    ___) | | | | (_) | |  | |_\__ \
+|_| \_\___/|_.__/|_|\___/_/\_\  |____/|_| |_|\___/|_|   \__|___/
+
+Automated YouTube Shorts · No API Key Required
+
+Loading configuration...
+Initializing components...
+TTS Engine: Google TTS
+Setting up background assets...
+  Ready: 17 video(s), 3 audio(s)
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Mode: Reddit Scraping (no API key)                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Fetching posts from r/BuyItForLife+AsianBeauty (time=week)...
+  [OK] What’s a totally unsexy purchase you made that ended up bein... (+1982, 6
+comments)
+  [OK] Took my 1982 Gravely 8162-B out of winter storage today, and... (+1127, 2
+comments)
+Found 1 eligible posts.
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Post 1/1                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Processing: What’s a totally unsexy purchase you made that ended up bein...
+  ID: 1sgl1fz | Score: 1982 | Comments: 6
+  [1/3] Generating TTS audio...
+  [OK] Generated 7 audio segments
+  [2/3] Composing video...
+Composing video for: What’s a totally unsexy purchase you made that end...
+  [OK] Rendered 7 card(s)
+  Background: geometry-dash.mp4
+  BGM: good-night.mp3 (vol: 0.12)
+  Rendering 51.6s video...
+  [OK] Saved: 
+output/products/What’s_a_totally_unsexy_purchase_you_made_that_ended_up_being_a_
+huge_quality-of-.mp4 (51.6s, 53.4MB)
+  [3/3] Updating history & saving meta...
+  Meta: 
+What’s_a_totally_unsexy_purchase_you_made_that_ended_up_being_a_huge_quality-of-
+_meta.txt
+
+
+                                Generated Videos                                
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ # ┃ Title                           ┃ Score ┃ Output File                    ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 1 │ What’s a totally unsexy         │  1982 │ What’s_a_totally_unsexy_purch… │
+│   │ purchase you made tha           │       │                                │
+└───┴─────────────────────────────────┴───────┴────────────────────────────────┘
+
+[OK] Successfully generated 1 video(s)!
+Output directory: output/products/
+=== [Products] done ===
+
+==========================================
+All channels done: 17:37:55
+==========================================

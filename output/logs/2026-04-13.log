@@ -1,0 +1,24 @@
+2026-04-13 17:00:03 [INFO] utils.config_loader: Configuration validation passed
+2026-04-13 17:00:56 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-tiny/revision/main "HTTP/1.1 200 OK"
+2026-04-13 17:00:57 [INFO] faster_whisper: Processing audio with duration 00:02.976
+2026-04-13 17:00:58 [INFO] faster_whisper: Processing audio with duration 00:03.792
+2026-04-13 17:01:01 [INFO] faster_whisper: Processing audio with duration 00:21.984
+2026-04-13 17:01:03 [INFO] faster_whisper: Processing audio with duration 00:04.608
+2026-04-13 17:01:05 [INFO] faster_whisper: Processing audio with duration 00:03.360
+2026-04-13 17:07:56 [INFO] googleapiclient.discovery_cache: file_cache is only supported with oauth2client<4.0.0
+2026-04-13 17:08:00 [INFO] youtube.uploader: Uploaded: https://www.youtube.com/shorts/DtFcnIRLblI
+2026-04-13 17:08:00 [INFO] utils.metrics: Pipeline marked as successful
+2026-04-13 17:08:00 [INFO] utils.metrics: Metrics exported to output/_metrics/metrics_20260413_170800.json
+2026-04-13 17:08:03 [INFO] utils.config_loader: Configuration validation passed
+2026-04-13 17:08:09 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-tiny/revision/main "HTTP/1.1 200 OK"
+2026-04-13 17:08:10 [INFO] faster_whisper: Processing audio with duration 00:02.088
+2026-04-13 17:08:12 [INFO] faster_whisper: Processing audio with duration 00:03.000
+2026-04-13 17:08:13 [INFO] faster_whisper: Processing audio with duration 00:03.672
+2026-04-13 17:08:14 [INFO] faster_whisper: Processing audio with duration 00:05.472
+2026-04-13 17:08:15 [INFO] faster_whisper: Processing audio with duration 00:03.528
+2026-04-13 17:08:16 [INFO] faster_whisper: Processing audio with duration 00:06.072
+2026-04-13 17:13:17 [INFO] googleapiclient.discovery_cache: file_cache is only supported with oauth2client<4.0.0
+2026-04-13 17:13:20 [INFO] youtube.uploader: Uploaded: https://www.youtube.com/shorts/TS_oHVi8NU4
+2026-04-13 17:13:23 [INFO] youtube.uploader: Thumbnail uploaded for video TS_oHVi8NU4
+2026-04-13 17:13:23 [INFO] utils.metrics: Pipeline marked as successful
+2026-04-13 17:13:23 [INFO] utils.metrics: Metrics exported to output/steam/_metrics/metrics_20260413_171323.json

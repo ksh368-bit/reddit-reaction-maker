@@ -114,6 +114,28 @@ output/
 - **Composition**: 20-30s (↓ 35% via caching)
 - **Total**: ~30s (↓ 35% overall)
 
+## Automatic Scheduling (Crontab)
+
+Generate videos automatically on a schedule:
+
+```bash
+# Interactive setup (Linux/macOS/Unix)
+./scripts/setup-crontab.sh
+
+# Or add to crontab manually:
+crontab -e
+# 0 8 * * * cd /path/to/reddit-reaction-maker && /usr/bin/python3 main.py --limit 1
+```
+
+Features:
+- ✅ Automatic path resolution (works from any working directory)
+- ✅ File locking prevents concurrent execution conflicts
+- ✅ Detailed logging to `output/logs/`
+- ✅ Email notifications on error
+- ✅ Datadog integration (optional)
+
+**See [CRONTAB.md](CRONTAB.md) for full guide** — scheduling examples, troubleshooting, monitoring.
+
 ## YouTube Upload
 
 1. Get OAuth2 credentials from [Google Cloud Console](https://console.cloud.google.com/)
@@ -125,6 +147,7 @@ output/
 ## Documentation
 
 - **[config.template.toml](config.template.toml)** — All 40+ options with descriptions
+- **[CRONTAB.md](CRONTAB.md)** — Automatic scheduling with crontab (Linux/Unix)
 - **[DOCKER.md](DOCKER.md)** — Docker & deployment guide
 - **[CLAUDE.md](CLAUDE.md)** — Development policy (TDD required)
 

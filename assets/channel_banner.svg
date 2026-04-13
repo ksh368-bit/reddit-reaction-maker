@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2560" height="1440" viewBox="0 0 2560 1440">
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a0a00"/>
+      <stop offset="50%" stop-color="#2d0e00"/>
+      <stop offset="100%" stop-color="#1a0a00"/>
+    </linearGradient>
+
+    <!-- Orange glow behind title -->
+    <radialGradient id="centerGlow" cx="50%" cy="50%" r="30%">
+      <stop offset="0%" stop-color="#FF4500" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#FF4500" stop-opacity="0.0"/>
+    </radialGradient>
+
+    <!-- Clip for safe zone indicator (not rendered) -->
+  </defs>
+
+  <!-- Background -->
+  <rect width="2560" height="1440" fill="url(#bgGrad)"/>
+
+  <!-- Center glow -->
+  <rect width="2560" height="1440" fill="url(#centerGlow)"/>
+
+  <!-- Decorative dot grid (left side) -->
+  <g fill="#FF4500" opacity="0.08">
+    <circle cx="120" cy="200" r="6"/><circle cx="200" cy="200" r="6"/><circle cx="280" cy="200" r="6"/><circle cx="360" cy="200" r="6"/><circle cx="440" cy="200" r="6"/><circle cx="520" cy="200" r="6"/>
+    <circle cx="120" cy="280" r="6"/><circle cx="200" cy="280" r="6"/><circle cx="280" cy="280" r="6"/><circle cx="360" cy="280" r="6"/><circle cx="440" cy="280" r="6"/><circle cx="520" cy="280" r="6"/>
+    <circle cx="120" cy="360" r="6"/><circle cx="200" cy="360" r="6"/><circle cx="280" cy="360" r="6"/><circle cx="360" cy="360" r="6"/><circle cx="440" cy="360" r="6"/><circle cx="520" cy="360" r="6"/>
+    <circle cx="120" cy="440" r="6"/><circle cx="200" cy="440" r="6"/><circle cx="280" cy="440" r="6"/><circle cx="360" cy="440" r="6"/><circle cx="440" cy="440" r="6"/><circle cx="520" cy="440" r="6"/>
+    <circle cx="120" cy="520" r="6"/><circle cx="200" cy="520" r="6"/><circle cx="280" cy="520" r="6"/><circle cx="360" cy="520" r="6"/><circle cx="440" cy="520" r="6"/><circle cx="520" cy="520" r="6"/>
+    <circle cx="120" cy="600" r="6"/><circle cx="200" cy="600" r="6"/><circle cx="280" cy="600" r="6"/><circle cx="360" cy="600" r="6"/><circle cx="440" cy="600" r="6"/><circle cx="520" cy="600" r="6"/>
+  </g>
+
+  <!-- Decorative dot grid (right side) -->
+  <g fill="#FF4500" opacity="0.08">
+    <circle cx="2040" cy="840" r="6"/><circle cx="2120" cy="840" r="6"/><circle cx="2200" cy="840" r="6"/><circle cx="2280" cy="840" r="6"/><circle cx="2360" cy="840" r="6"/><circle cx="2440" cy="840" r="6"/>
+    <circle cx="2040" cy="920" r="6"/><circle cx="2120" cy="920" r="6"/><circle cx="2200" cy="920" r="6"/><circle cx="2280" cy="920" r="6"/><circle cx="2360" cy="920" r="6"/><circle cx="2440" cy="920" r="6"/>
+    <circle cx="2040" cy="1000" r="6"/><circle cx="2120" cy="1000" r="6"/><circle cx="2200" cy="1000" r="6"/><circle cx="2280" cy="1000" r="6"/><circle cx="2360" cy="1000" r="6"/><circle cx="2440" cy="1000" r="6"/>
+    <circle cx="2040" cy="1080" r="6"/><circle cx="2120" cy="1080" r="6"/><circle cx="2200" cy="1080" r="6"/><circle cx="2280" cy="1080" r="6"/><circle cx="2360" cy="1080" r="6"/><circle cx="2440" cy="1080" r="6"/>
+    <circle cx="2040" cy="1160" r="6"/><circle cx="2120" cy="1160" r="6"/><circle cx="2200" cy="1160" r="6"/><circle cx="2280" cy="1160" r="6"/><circle cx="2360" cy="1160" r="6"/><circle cx="2440" cy="1160" r="6"/>
+    <circle cx="2040" cy="1240" r="6"/><circle cx="2120" cy="1240" r="6"/><circle cx="2200" cy="1240" r="6"/><circle cx="2280" cy="1240" r="6"/><circle cx="2360" cy="1240" r="6"/><circle cx="2440" cy="1240" r="6"/>
+  </g>
+
+  <!-- Left accent line -->
+  <rect x="507" y="540" width="4" height="360" fill="#FF4500" opacity="0.5" rx="2"/>
+
+  <!-- Right accent line -->
+  <rect x="2049" y="540" width="4" height="360" fill="#FF4500" opacity="0.5" rx="2"/>
+
+  <!-- ===== SAFE ZONE CONTENT (1546x423 centered = x:507~2053, y:509~932) ===== -->
+
+  <!-- Miniature speech bubble (logo mark) -->
+  <rect x="880" y="570" width="160" height="108" rx="18" fill="#FF4500"/>
+  <polygon points="930,678 910,720 970,678" fill="#FF4500"/>
+
+  <!-- 썰 inside mini bubble -->
+  <text x="960" y="648" font-family="'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif"
+    font-size="80" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="white">썰</text>
+
+  <!-- Main title -->
+  <text x="1280" y="660"
+    font-family="'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif"
+    font-size="200" font-weight="900" text-anchor="middle" dominant-baseline="middle"
+    fill="white" letter-spacing="-4">레딧 썰</text>
+
+  <!-- Orange underline -->
+  <rect x="880" y="760" width="800" height="8" rx="4" fill="#FF4500"/>
+
+  <!-- Subtitle -->
+  <text x="1280" y="840"
+    font-family="'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif"
+    font-size="52" font-weight="400" text-anchor="middle"
+    fill="white" opacity="0.65" letter-spacing="6">
+    해외 반응 • Reddit 인기글 • YouTube Shorts
+  </text>
+
+</svg>

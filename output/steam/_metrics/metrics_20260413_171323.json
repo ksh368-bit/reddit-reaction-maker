@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-04-13T17:08:03.917115",
+  "start_time": 1776067683.917135,
+  "tts_duration_sec": 9.155065059661865,
+  "video_composition_duration_sec": 300.5606417655945,
+  "youtube_upload_duration_sec": 5.819832801818848,
+  "whisper_fallback_count": 0,
+  "background_type": null,
+  "post_virality_score": null,
+  "segments_count": 6,
+  "success": true,
+  "error_type": null,
+  "error_message": null,
+  "subreddit": "Steam+pcgaming",
+  "post_id": "1sj15x8",
+  "youtube_video_id": "TS_oHVi8NU4",
+  "end_time": 1776068003.324651,
+  "total_duration_sec": 319.40751600265503
+}

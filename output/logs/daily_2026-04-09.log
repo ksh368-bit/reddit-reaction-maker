@@ -1,0 +1,252 @@
+==========================================
+Daily run: 2026-04-09 17:00:00
+==========================================
+
+=== [AITA/Reddit] start: 17:00:00 ===
+
+
+ ____       _     _               ____  _                _
+|  _ \ ___ | |__ | | _____  __  / ___|| |__   ___  _ __| |_ ___
+| |_) / _ \| '_ \| |/ _ \ \/ /  \___ \| '_ \ / _ \| '__| __/ __|
+|  _ < (_) | |_) | | (_) >  <    ___) | | | | (_) | |  | |_\__ \
+|_| \_\___/|_.__/|_|\___/_/\_\  |____/|_| |_|\___/|_|   \__|___/
+
+Automated YouTube Shorts · No API Key Required
+
+Loading configuration...
+Initializing components...
+TTS Engine: Edge TTS (en-US-AriaNeural)
+Setting up background assets...
+  Ready: 17 video(s), 3 audio(s)
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Mode: Reddit Scraping (no API key)                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Fetching posts from r/pettyrevenge (time=week)...
+Found 0 eligible posts.
+  No new posts for time_filter='week', trying broader range...
+Fetching posts from r/pettyrevenge (time=month)...
+Found 0 eligible posts.
+  No new posts for time_filter='month', trying broader range...
+Fetching posts from r/pettyrevenge (time=year)...
+  [OK] My neighbor kept parking in my driveway. So I parked behind ... (+76520, 
+1 comments)
+  [OK] She erased us from her wedding. So I’m erasing her from mine... (+49058, 
+1 comments)
+Found 1 eligible posts.
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Post 1/1                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Processing: She erased us from her wedding. So I’m erasing her from mine...
+  ID: 1kdlelx | Score: 49058 | Comments: 1
+  [1/3] Generating TTS audio...
+  [OK] Generated 5 audio segments
+  [2/3] Composing video...
+Composing video for: She erased us from her wedding. So I’m erasing her...
+  [OK] Rendered 5 card(s)
+  Background: slime-making.mp4
+  BGM: lofi-study.mp3 (vol: 0.08)
+  Rendering 40.8s video...
+  [OK] Saved: 
+output/She_erased_us_from_her_wedding._So_I’m_erasing_her_from_mine..mp4 (40.8s,
+38.6MB)
+  [3/3] Updating history & saving meta...
+  Meta: She_erased_us_from_her_wedding._So_I’m_erasing_her_from_mine._meta.txt
+
+
+                                Generated Videos                                
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ # ┃ Title                           ┃ Score ┃ Output File                    ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 1 │ She erased us from her wedding. │ 49058 │ She_erased_us_from_her_weddin… │
+│   │ So I’m erasin                   │       │                                │
+└───┴─────────────────────────────────┴───────┴────────────────────────────────┘
+
+[OK] Successfully generated 1 video(s)!
+Output directory: output/
+=== [AITA/Reddit] done ===
+
+=== [Steam] start: 17:07:27 ===
+
+
+ ____       _     _               ____  _                _
+|  _ \ ___ | |__ | | _____  __  / ___|| |__   ___  _ __| |_ ___
+| |_) / _ \| '_ \| |/ _ \ \/ /  \___ \| '_ \ / _ \| '__| __/ __|
+|  _ < (_) | |_) | | (_) >  <    ___) | | | | (_) | |  | |_\__ \
+|_| \_\___/|_.__/|_|\___/_/\_\  |____/|_| |_|\___/|_|   \__|___/
+
+Automated YouTube Shorts · No API Key Required
+
+Loading configuration...
+Initializing components...
+TTS Engine: Edge TTS (en-US-GuyNeural)
+Setting up background assets...
+  Ready: 17 video(s), 3 audio(s)
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Mode: Reddit Scraping (no API key)                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Fetching posts from r/Steam+pcgaming (time=week)...
+Found 0 eligible posts.
+  No new posts for time_filter='week', trying broader range...
+Fetching posts from r/Steam+pcgaming (time=month)...
+  [OK] Just passed 3000 games owned on Steam. I really think Valve ... (+32925, 
+4 comments)
+Found 1 eligible posts.
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Post 1/1                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Processing: Just passed 3000 games owned on Steam. I really think Valve ...
+  ID: 1rtgzzp | Score: 32925 | Comments: 4
+  [1/3] Generating TTS audio...
+  [OK] Generated 6 audio segments
+  [2/3] Composing video...
+Composing video for: Just passed 3000 games owned on Steam. I really th...
+  [OK] Rendered 6 card(s)
+  Background: roblox-obby.mp4
+  BGM: good-night.mp3 (vol: 0.08)
+  Rendering 31.8s video...
+  [OK] Saved: 
+output/steam/Just_passed_3000_games_owned_on_Steam._I_really_think_Valve_should_
+allow_people_.mp4 (31.8s, 31.5MB)
+  [3/3] Updating history & saving meta...
+  Meta: 
+Just_passed_3000_games_owned_on_Steam._I_really_think_Valve_should_allow_people_
+_meta.txt
+
+
+                                Generated Videos                                
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ # ┃ Title                           ┃ Score ┃ Output File                    ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 1 │ Just passed 3000 games owned on │ 32925 │ Just_passed_3000_games_owned_… │
+│   │ Steam. I real                   │       │                                │
+└───┴─────────────────────────────────┴───────┴────────────────────────────────┘
+
+[OK] Successfully generated 1 video(s)!
+Output directory: output/steam/
+=== [Steam] done ===
+
+=== [Manga] start: 17:13:25 ===
+
+
+ ____       _     _               ____  _                _
+|  _ \ ___ | |__ | | _____  __  / ___|| |__   ___  _ __| |_ ___
+| |_) / _ \| '_ \| |/ _ \ \/ /  \___ \| '_ \ / _ \| '__| __/ __|
+|  _ < (_) | |_) | | (_) >  <    ___) | | | | (_) | |  | |_\__ \
+|_| \_\___/|_.__/|_|\___/_/\_\  |____/|_| |_|\___/|_|   \__|___/
+
+Automated YouTube Shorts · No API Key Required
+
+Loading configuration...
+Initializing components...
+TTS Engine: Google TTS
+Setting up background assets...
+  Ready: 17 video(s), 3 audio(s)
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Mode: Reddit Scraping (no API key)                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Fetching posts from r/manga+manhwa (time=week)...
+  [OK] [DISC] The Hunter, Into The Wolf's Belly - Oneshot... (+5156, 6 comments)
+  [OK] [Return of Mount Hua Sect] IS RETURNING ON APRIL 14!!... (+3636, 4 
+comments)
+  [OK] [DISC] - Slave Role-Reversal - Oneshot by @medatarou1... (+3227, 6 
+comments)
+Found 1 eligible posts.
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Post 1/1                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Processing: [DISC] - Slave Role-Reversal - Oneshot by @medatarou1...
+  ID: 1sb82ko | Score: 3227 | Comments: 6
+  [1/3] Generating TTS audio...
+  [OK] Generated 7 audio segments
+  [2/3] Composing video...
+Composing video for: [DISC] - Slave Role-Reversal - Oneshot by @medatar...
+  [OK] Rendered 7 card(s)
+  Background: food-prep.mp4
+  BGM: lofi-study.mp3 (vol: 0.12)
+  Rendering 42.6s video...
+  [OK] Saved: 
+output/manga/[DISC]_-_Slave_Role-Reversal_-_Oneshot_by_@medatarou1.mp4 (42.6s, 
+41.4MB)
+  [3/3] Updating history & saving meta...
+  Meta: [DISC]_-_Slave_Role-Reversal_-_Oneshot_by_@medatarou1_meta.txt
+
+
+                                Generated Videos                                
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ # ┃ Title                           ┃ Score ┃ Output File                    ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 1 │ [DISC] - Slave Role-Reversal -  │  3227 │ [DISC]_-_Slave_Role-Reversal_… │
+│   │ Oneshot by @me                  │       │                                │
+└───┴─────────────────────────────────┴───────┴────────────────────────────────┘
+
+[OK] Successfully generated 1 video(s)!
+Output directory: output/manga/
+=== [Manga] done ===
+
+=== [Products] start: 17:21:11 ===
+
+
+ ____       _     _               ____  _                _
+|  _ \ ___ | |__ | | _____  __  / ___|| |__   ___  _ __| |_ ___
+| |_) / _ \| '_ \| |/ _ \ \/ /  \___ \| '_ \ / _ \| '__| __/ __|
+|  _ < (_) | |_) | | (_) >  <    ___) | | | | (_) | |  | |_\__ \
+|_| \_\___/|_.__/|_|\___/_/\_\  |____/|_| |_|\___/|_|   \__|___/
+
+Automated YouTube Shorts · No API Key Required
+
+Loading configuration...
+Initializing components...
+TTS Engine: Google TTS
+Setting up background assets...
+  Ready: 17 video(s), 3 audio(s)
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Mode: Reddit Scraping (no API key)                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Fetching posts from r/BuyItForLife+AsianBeauty (time=week)...
+  [OK] My sister asked me what I wanted for my Christmas. I said a ... (+1176, 4
+comments)
+  [OK] Took my 1982 Gravely 8162-B out of winter storage today, and... (+1130, 3
+comments)
+  [OK] Estwing Hammer. 25 years old, It's a classic.... (+1114, 3 comments)
+Found 1 eligible posts.
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Post 1/1                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Processing: My sister asked me what I wanted for my Christmas. I said a ...
+  ID: 1se2c91 | Score: 1176 | Comments: 4
+  [1/3] Generating TTS audio...
+  [OK] Generated 5 audio segments
+  [2/3] Composing video...
+Composing video for: My sister asked me what I wanted for my Christmas....
+  [OK] Rendered 5 card(s)
+  Background: soap-cutting.mp4
+  BGM: lofi-chill.mp3 (vol: 0.12)
+  Rendering 52.9s video...
+  [OK] Saved: 
+output/products/My_sister_asked_me_what_I_wanted_for_my_Christmas._I_said_a_Brau
+n_shaver._Her_hu.mp4 (52.9s, 51.8MB)
+  [3/3] Updating history & saving meta...
+  Meta: 
+My_sister_asked_me_what_I_wanted_for_my_Christmas._I_said_a_Braun_shaver._Her_hu
+_meta.txt
+
+
+                                Generated Videos                                
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ # ┃ Title                           ┃ Score ┃ Output File                    ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 1 │ My sister asked me what I       │  1176 │ My_sister_asked_me_what_I_wan… │
+│   │ wanted for my Chris             │       │                                │
+└───┴─────────────────────────────────┴───────┴────────────────────────────────┘
+
+[OK] Successfully generated 1 video(s)!
+Output directory: output/products/
+=== [Products] done ===
+
+==========================================
+All channels done: 17:30:27
+==========================================

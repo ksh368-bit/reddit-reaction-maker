@@ -1,0 +1,62 @@
+=== Steam channel run: 2026-04-08 22:28:54 ===
+
+
+ ____       _     _               ____  _                _
+|  _ \ ___ | |__ | | _____  __  / ___|| |__   ___  _ __| |_ ___
+| |_) / _ \| '_ \| |/ _ \ \/ /  \___ \| '_ \ / _ \| '__| __/ __|
+|  _ < (_) | |_) | | (_) >  <    ___) | | | | (_) | |  | |_\__ \
+|_| \_\___/|_.__/|_|\___/_/\_\  |____/|_| |_|\___/|_|   \__|___/
+
+Automated YouTube Shorts · No API Key Required
+
+Loading configuration...
+Initializing components...
+TTS Engine: Edge TTS (en-US-GuyNeural)
+Setting up background assets...
+  Downloading background video: Subway Surfers...
+ERROR: [youtube] 4muYkuRCt20: Video unavailable
+yt-dlp download error: ERROR:  4muYkuRCt20: Video unavailable
+    Failed to download: subway-surfers-2
+  Downloading background video: Minecraft Parkour...
+ERROR: [youtube] FgGCCuFvyl8: Video unavailable
+yt-dlp download error: ERROR:  FgGCCuFvyl8: Video unavailable
+    Failed to download: minecraft-parkour-2
+  Downloading background video: Geometry Dash...
+ERROR: [youtube] StCRMEBERXM: Video unavailable
+yt-dlp download error: ERROR:  StCRMEBERXM: Video unavailable
+    Failed to download: geometry-dash
+  Ready: 14 video(s), 3 audio(s)
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Mode: Reddit Scraping (no API key)                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Fetching posts from r/Steam+pcgaming (time=week)...
+  [OK] $680? What is this?... (+6653, 5 comments)
+Found 1 eligible posts.
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Post 1/1                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Processing: $680? What is this?...
+  ID: 1sdkat8 | Score: 6653 | Comments: 5
+  [1/3] Generating TTS audio...
+  [OK] Generated 6 audio segments
+  [2/3] Composing video...
+Composing video for: $680? What is this?...
+  [OK] Rendered 6 card(s)
+  Background: soap-cutting.mp4
+  BGM: good-night.mp3 (vol: 0.08)
+  Rendering 34.8s video...
+  [OK] Saved: output/steam/$680_What_is_this.mp4 (34.8s, 33.7MB)
+  [3/3] Updating history...
+
+
+                     Generated Videos                      
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ # ┃ Title               ┃ Score ┃ Output File           ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 1 │ $680? What is this? │  6653 │ $680_What_is_this.mp4 │
+└───┴─────────────────────┴───────┴───────────────────────┘
+
+[OK] Successfully generated 1 video(s)!
+Output directory: output/steam/
+=== Done: 2026-04-08 22:31:49 ===

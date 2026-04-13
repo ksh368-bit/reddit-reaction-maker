@@ -1,0 +1,21 @@
+=== URL health check: 2026-04-13 09:00:02 ===
+Checking URLs in assets/background_videos.json...
+        URL Health Check        
+┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┓
+┃ Key                 ┃ Status ┃
+┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━┩
+│ subway-surfers-1    │ OK     │
+├─────────────────────┼────────┤
+│ subway-surfers-2    │ OK     │
+├─────────────────────┼────────┤
+│ minecraft-parkour-1 │ OK     │
+├─────────────────────┼────────┤
+│ minecraft-parkour-2 │ OK     │
+├─────────────────────┼────────┤
+│ roblox-parkour      │ OK     │
+├─────────────────────┼────────┤
+│ geometry-dash       │ OK     │
+└─────────────────────┴────────┘
+
+✓ All URLs healthy.
+=== Exit: 0 at 2026-04-13 09:00:15 ===
