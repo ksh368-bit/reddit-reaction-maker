@@ -62,6 +62,16 @@ class VideoComposer:
         # Watermark overlay (e.g. "r/roblox")
         self.watermark = video_cfg.get("watermark", "")
 
+        # Render parameters (tunable for different aesthetics)
+        self.zoom_scale_min = video_cfg.get("zoom_scale_min", 1.06)
+        self.zoom_scale_max = video_cfg.get("zoom_scale_max", 1.08)
+        self.zoom_duration = video_cfg.get("zoom_duration", 0.35)
+        self.bgm_ducking_factor = video_cfg.get("bgm_ducking_factor", 0.35)
+        self.caption_chunk_size = video_cfg.get("caption_chunk_size", 2)
+        self.caption_lead_time = video_cfg.get("caption_lead_time", 0.1)
+        self.fade_in_duration = video_cfg.get("fade_in_duration", 0.15)
+        self.fade_out_duration = video_cfg.get("fade_out_duration", 0.3)
+
         self.output_dir = config.get("output", {}).get("dir", "output")
         os.makedirs(self.output_dir, exist_ok=True)
 
@@ -327,7 +337,7 @@ class VideoComposer:
 
     def _create_bgm_clip(self, duration: float,
                          timing_info: list | None = None,
-                         duck_factor: float = 0.35) -> AudioFileClip | None:
+                         duck_factor: float | None = None) -> AudioFileClip | None:
         """
         Create a background music audio clip with optional TTS ducking.
 
@@ -335,6 +345,10 @@ class VideoComposer:
         during TTS speech segments and restored to full bgm_volume during gaps.
         Also fixes BGM shorter than video by looping (AudioLoop effect).
         """
+        # Use config ducking factor if not explicitly provided
+        if duck_factor is None:
+            duck_factor = self.bgm_ducking_factor
+
         if not self.bgm_enabled:
             return None
 
@@ -464,7 +478,7 @@ class VideoComposer:
 
             # ── Step 4: Overlay screenshots synced with audio ──
             overlay_clips = []
-            fade_in = 0.15  # seconds — quick fade-in to soften hard cuts
+            fade_in = self.fade_in_duration  # seconds — quick fade-in to soften hard cuts
 
             # ── Hook overlay ──
             # If a "hook" segment exists (money quote TTS), its card is used.
@@ -488,7 +502,7 @@ class VideoComposer:
                     hook_img.save(hook_path, "PNG")
                     hook_clip = self._create_zoom_punch_clip(
                         hook_path, hook_duration,
-                        zoom_duration=0.35, zoom_scale=1.06,
+                        zoom_duration=self.zoom_duration, zoom_scale=self.zoom_scale_min,
                     )
                     if hook_clip is None:
                         hook_clip = ImageClip(hook_path, duration=hook_duration).with_position((0, 0))
@@ -513,7 +527,7 @@ class VideoComposer:
                     clip_dur = max(clamped_display, audio_dur, 2.0)
                     clip = self._create_zoom_punch_clip(
                         card_path, clip_dur,
-                        zoom_duration=0.4, zoom_scale=1.08,
+                        zoom_duration=self.zoom_duration, zoom_scale=self.zoom_scale_max,
                     )
                     if clip is None:
                         clip = ImageClip(card_path, duration=clip_dur).with_position((0, 0))
@@ -533,7 +547,7 @@ class VideoComposer:
                             clip_dur = max(clip_dur - hook_duration, audio_dur)
                             effects.append(CrossFadeIn(fade_in))
                             if clip_dur > 1.0:
-                                effects.append(FadeOut(min(0.5, clip_dur * 0.2)))
+                                effects.append(FadeOut(min(self.fade_out_duration, clip_dur * 0.2)))
                         else:
                             clip_start = start
                             if start > 0:

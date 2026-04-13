@@ -33,6 +33,16 @@ opacity = 0.45          # Background dimming (0.0=bright, 1.0=black)
 bgm_enabled = true      # Background music on/off
 bgm_volume = 0.08       # BGM volume — keep well below TTS voice level
 
+# Render parameters (tunable for different aesthetics)
+zoom_scale_min = 1.06   # Minimum zoom level for punch effect
+zoom_scale_max = 1.08   # Maximum zoom level for punch effect
+zoom_duration = 0.35    # Duration of zoom punch effect (seconds)
+bgm_ducking_factor = 0.35  # BGM volume reduction when TTS playing (0.0-1.0)
+caption_chunk_size = 2   # Words per karaoke caption chunk (2-4 recommended)
+caption_lead_time = 0.1  # Seconds before word spoken to show caption (0.05-0.2)
+fade_in_duration = 0.15  # Segment fade-in duration (seconds)
+fade_out_duration = 0.3  # Segment fade-out duration (seconds)
+
 [output]
 dir = "output"
 filename_template = "{subreddit}_{post_id}_{date}"
