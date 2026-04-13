@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    branches: [master, main]
+    tags:
+      - 'v*'
+
+jobs:
+  test-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(git describe --tags --always)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body: |
+            # Changes in ${{ github.ref_name }}
+
+            See commit log for details.
+
+            ## Quick Start
+
+            ```bash
+            # Clone and setup
+            git clone https://github.com/SeungheeKim/reddit-reaction-maker.git
+            cd reddit-reaction-maker
+            pip install -r requirements.txt
+
+            # Run with Docker
+            docker build -t reddit-shorts:latest .
+            docker run -v $(pwd)/output:/app/output reddit-shorts:latest --limit 1
+
+            # Or run locally
+            python main.py --limit 1
+            ```
+          draft: false
+          prerelease: false
+
+      - name: Build and push Docker image
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+        continue-on-error: true
+
+      - name: Build and push
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false  # Set to true if Docker Hub credentials configured
+          tags: reddit-shorts:${{ steps.version.outputs.version }}
+        continue-on-error: true

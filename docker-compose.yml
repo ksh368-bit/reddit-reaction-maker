@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  reddit-shorts:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: reddit-shorts-maker
+    environment:
+      # YouTube OAuth (optional)
+      # - DATADOG_API_KEY=${DATADOG_API_KEY}
+    volumes:
+      # Mount output directory for persistent video/metrics storage
+      - ./output:/app/output
+      # Mount config file (optional)
+      - ./config.toml:/app/config.toml:ro
+      # Mount credentials if using YouTube upload
+      # - ./credentials.json:/app/credentials.json:ro
+    working_dir: /app
+    command: --limit 1 --time week
+    # To test with local files instead of Reddit:
+    # command: --file scripts/test.txt
+    # To use interactive shell:
+    # stdin_open: true
+    # tty: true
+    # command: /bin/bash
