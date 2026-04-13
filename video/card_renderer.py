@@ -4,6 +4,7 @@ Card renderer:
   - Comment segments → Bold white text + black outline, lower-center overlay
 """
 
+import hashlib
 import os
 import re
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -11,6 +12,32 @@ from rich.console import Console
 from utils.verdict_extractor import VERDICT_TEXT
 
 console = Console()
+
+# In-memory cache for rendered cards (session-scoped)
+_CARD_CACHE = {}
+
+
+def _get_cache_key(content: str, card_type: str, **kwargs) -> str:
+    """Generate cache key from content and rendering parameters."""
+    key_str = f"{card_type}:{content}:" + ":".join(f"{k}={v}" for k, v in sorted(kwargs.items()))
+    return hashlib.md5(key_str.encode()).hexdigest()
+
+
+def _get_cached_card(cache_key: str) -> Image.Image | None:
+    """Get card from cache if it exists."""
+    return _CARD_CACHE.get(cache_key)
+
+
+def _cache_card(cache_key: str, card: Image.Image) -> Image.Image:
+    """Store card in cache and return it."""
+    _CARD_CACHE[cache_key] = card
+    return card
+
+
+def clear_card_cache():
+    """Clear the card cache (call at end of video generation)."""
+    global _CARD_CACHE
+    _CARD_CACHE.clear()
 
 
 def extract_hook_text(title: str) -> str:
@@ -383,7 +410,17 @@ def render_comment_card(
     Full-canvas transparent overlay.
     Keyword: large ALL-CAPS white text on black rounded-rect, centered.
     Fallback (no keyword): bold white text with black outline, lower-center.
+
+    Uses in-memory cache to avoid re-rendering identical cards.
     """
+    # Check cache
+    cache_key = _get_cache_key(body, "comment", author=author, score=score,
+                               card_width=card_width, font_size=font_size,
+                               video_height=video_height)
+    cached = _get_cached_card(cache_key)
+    if cached:
+        return cached.copy()  # Return a copy to avoid mutation
+
     img  = Image.new("RGBA", (card_width, video_height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
@@ -433,7 +470,8 @@ def render_comment_card(
                       stroke_width=5, stroke_fill=BLACK)
             y += line_h
 
-    return img
+    # Cache and return
+    return _cache_card(cache_key, img)
 
 
 # ──────────────────────────────────────────────

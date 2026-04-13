@@ -621,3 +621,7 @@ class VideoComposer:
             import traceback
             traceback.print_exc()
             return None
+        finally:
+            # Clear card rendering cache for next video
+            from video.card_renderer import clear_card_cache
+            clear_card_cache()
