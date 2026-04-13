@@ -33,6 +33,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from utils.config_loader import load_config, validate_config
 from utils.meta_generator import MetaGenerator
+from utils.metrics import MetricsCollector
 from utils.verdict_extractor import extract_verdict
 from reddit.scraper import RedditScraper, TextFileScraper
 from tts.engine import TTSEngine
@@ -90,10 +91,14 @@ BANNER = """
 """
 
 
-def process_post(post, tts_engine: TTSEngine, composer: VideoComposer, scraper, config: dict) -> str | None:
+def process_post(post, tts_engine: TTSEngine, composer: VideoComposer, scraper, config: dict, metrics: MetricsCollector | None = None) -> str | None:
     """Process a single post (Reddit or text file) into a Shorts video."""
     console.print(f"\n[bold]Processing: {post.title[:60]}...[/bold]")
     console.print(f"  [dim]ID: {post.id} | Score: {post.score} | Comments: {len(post.comments)}[/dim]")
+
+    if metrics:
+        metrics.record("post_id", post.id)
+        metrics.record("subreddit", post.subreddit if hasattr(post, "subreddit") else "unknown")
 
     # Create temp directory for this post's audio files
     temp_dir = tempfile.mkdtemp(prefix=f"roblox_shorts_{post.id}_")
@@ -101,18 +106,31 @@ def process_post(post, tts_engine: TTSEngine, composer: VideoComposer, scraper, 
     try:
         # Step 1: Generate TTS audio
         console.print("  [cyan][1/3] Generating TTS audio...[/cyan]")
+        tts_start = metrics.start_timer("tts_duration_sec") if metrics else 0
         segments = tts_engine.generate_for_post(post, temp_dir)
+        if metrics:
+            metrics.end_timer("tts_duration_sec", tts_start)
 
         if not segments:
             console.print("  [yellow]No valid segments generated. Skipping.[/yellow]")
+            if metrics:
+                metrics.mark_error("tts_failed", "No valid segments generated")
             return None
+
+        if metrics:
+            metrics.record("segments_count", len(segments))
 
         # Step 2: Compose video
         console.print("  [cyan][2/3] Composing video...[/cyan]")
+        video_start = metrics.start_timer("video_composition_duration_sec") if metrics else 0
         output_path = composer.compose_video(post, segments)
+        if metrics:
+            metrics.end_timer("video_composition_duration_sec", video_start)
 
         if not output_path:
             console.print("  [red]Video composition failed. Skipping.[/red]")
+            if metrics:
+                metrics.mark_error("video_failed", "Video composition failed")
             return None
 
         # Step 3: Save meta + history
@@ -131,6 +149,7 @@ def process_post(post, tts_engine: TTSEngine, composer: VideoComposer, scraper, 
             thumb_path = os.path.splitext(output_path)[0] + "_thumb.png"
             if not os.path.exists(thumb_path):
                 thumb_path = None
+            yt_start = metrics.start_timer("youtube_upload_duration_sec") if metrics else 0
             video_id = upload_video(
                 output_path, title, description,
                 credentials_path=yt_cfg.get("credentials_path", "credentials.json"),
@@ -141,11 +160,17 @@ def process_post(post, tts_engine: TTSEngine, composer: VideoComposer, scraper, 
                 notify_subscribers=yt_cfg.get("notify_subscribers", True),
                 thumb_path=thumb_path if yt_cfg.get("upload_thumbnail", True) else None,
             )
+            if metrics:
+                metrics.end_timer("youtube_upload_duration_sec", yt_start)
             if video_id:
+                if metrics:
+                    metrics.record("youtube_video_id", video_id)
                 console.print(f"  [green]YouTube: https://youtu.be/{video_id}[/green]")
             else:
                 console.print("  [yellow]YouTube upload failed (video kept locally)[/yellow]")
 
+        if metrics:
+            metrics.mark_success()
         return output_path
 
     finally:
@@ -201,10 +226,11 @@ def main():
     if args.subreddit:
         config["reddit"]["subreddit"] = args.subreddit
 
-    # Initialize TTS and video composer
+    # Initialize TTS, video composer, and metrics collector
     console.print("[cyan]Initializing components...[/cyan]")
     tts_engine = TTSEngine(config)
     composer = VideoComposer(config)
+    metrics = MetricsCollector(enabled=True)  # Always enabled for observability
 
     # Determine source mode and fetch posts
     posts = []
@@ -244,7 +270,7 @@ def main():
         console.print(
             Panel(f"[bold]Post {i}/{len(posts)}[/bold]", style="cyan")
         )
-        output = process_post(post, tts_engine, composer, scraper, config)
+        output = process_post(post, tts_engine, composer, scraper, config, metrics=metrics)
         if output:
             results.append({"post": post, "output": output})
 
@@ -272,6 +298,13 @@ def main():
         console.print(f"[dim]Output directory: {composer.output_dir}/[/dim]")
     else:
         console.print("[yellow]No videos were generated.[/yellow]")
+
+    # Export metrics
+    metrics_file = metrics.export_json(output_dir=composer.output_dir)
+    if metrics_file:
+        console.print(f"[dim]Metrics: {os.path.basename(metrics_file)}[/dim]")
+        # Attempt Datadog export (optional, graceful failure)
+        metrics.export_to_datadog()
 
 
 if __name__ == "__main__":
