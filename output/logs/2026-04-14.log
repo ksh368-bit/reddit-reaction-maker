@@ -1,0 +1,24 @@
+2026-04-14 17:00:03 [INFO] utils.config_loader: Configuration validation passed
+2026-04-14 17:00:18 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-tiny/revision/main "HTTP/1.1 200 OK"
+2026-04-14 17:00:18 [INFO] faster_whisper: Processing audio with duration 00:04.608
+2026-04-14 17:00:20 [INFO] faster_whisper: Processing audio with duration 00:02.664
+2026-04-14 17:01:57 [INFO] googleapiclient.discovery_cache: file_cache is only supported with oauth2client<4.0.0
+2026-04-14 17:02:01 [INFO] youtube.uploader: Uploaded: https://www.youtube.com/shorts/eM21z9cCRYg
+2026-04-14 17:02:04 [INFO] youtube.uploader: Thumbnail uploaded for video eM21z9cCRYg
+2026-04-14 17:02:04 [INFO] utils.metrics: Pipeline marked as successful
+2026-04-14 17:02:04 [INFO] utils.metrics: Metrics exported to /Users/seungheekim/work/reddit-reaction-maker/output/_metrics/metrics_20260414_170204.json
+2026-04-14 17:02:07 [INFO] utils.config_loader: Configuration validation passed
+2026-04-14 17:02:13 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-tiny/revision/main "HTTP/1.1 200 OK"
+2026-04-14 17:02:13 [INFO] faster_whisper: Processing audio with duration 00:07.656
+2026-04-14 17:02:16 [INFO] faster_whisper: Processing audio with duration 00:01.944
+2026-04-14 17:02:18 [INFO] faster_whisper: Processing audio with duration 00:06.024
+2026-04-14 17:02:19 [INFO] faster_whisper: Processing audio with duration 00:03.792
+2026-04-14 17:02:20 [INFO] faster_whisper: Processing audio with duration 00:04.728
+2026-04-14 17:02:21 [INFO] faster_whisper: Processing audio with duration 00:03.288
+2026-04-14 17:02:22 [INFO] faster_whisper: Processing audio with duration 00:03.000
+2026-04-14 17:02:22 [INFO] faster_whisper: Processing audio with duration 00:03.168
+2026-04-14 17:08:52 [INFO] googleapiclient.discovery_cache: file_cache is only supported with oauth2client<4.0.0
+2026-04-14 17:08:56 [INFO] youtube.uploader: Uploaded: https://www.youtube.com/shorts/3AuzcQ6G9jI
+2026-04-14 17:08:59 [INFO] youtube.uploader: Thumbnail uploaded for video 3AuzcQ6G9jI
+2026-04-14 17:08:59 [INFO] utils.metrics: Pipeline marked as successful
+2026-04-14 17:08:59 [INFO] utils.metrics: Metrics exported to /Users/seungheekim/work/reddit-reaction-maker/output/steam/_metrics/metrics_20260414_170859.json

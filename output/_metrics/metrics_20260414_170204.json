@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-04-14T17:00:03.243958",
+  "start_time": 1776153603.243969,
+  "tts_duration_sec": 4.843467950820923,
+  "video_composition_duration_sec": 96.34607315063477,
+  "youtube_upload_duration_sec": 7.80657696723938,
+  "whisper_fallback_count": 0,
+  "background_type": null,
+  "post_virality_score": null,
+  "segments_count": 2,
+  "success": true,
+  "error_type": null,
+  "error_message": null,
+  "subreddit": "relationship_advice",
+  "post_id": "1sjeh39",
+  "youtube_video_id": "eM21z9cCRYg",
+  "end_time": 1776153724.801058,
+  "total_duration_sec": 121.55708909034729
+}
