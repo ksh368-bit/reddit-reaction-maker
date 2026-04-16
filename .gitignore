@@ -11,16 +11,18 @@ venv/
 config.toml
 
 # Output
-output/*.mp4
-output/*.mp3
+output/**/*.mp4
+output/**/*.mp3
+output/**/*.png
 output/history.json
+output/**/history.json
 
 # Temp files
 temp/
 *.tmp
 
-# Assets (user-provided)
-assets/backgrounds/*.mp4
+# Assets (user-provided — large binaries, never commit)
+assets/backgrounds/
 assets/fonts/*.ttf
 assets/fonts/*.otf
 
