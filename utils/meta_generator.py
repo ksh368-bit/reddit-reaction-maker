@@ -12,46 +12,84 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 _SUBREDDIT_TAGS: dict[str, list[str]] = {
     # Reddit judgment stories
-    "amitheasshole":       ["#AITA", "#AmITheAsshole", "#RedditStories"],
-    "relationship_advice": ["#RelationshipAdvice", "#RedditStories"],
-    "tifu":                ["#TIFU", "#RedditStories"],
-    "pettyrevenge":        ["#PettyRevenge", "#RedditStories"],
-    "maliciouscompliance": ["#MaliciousCompliance", "#RedditStories"],
-    "choosingbeggars":     ["#ChoosingBeggars", "#RedditStories"],
-    "entitledpeople":      ["#Entitled", "#RedditStories"],
-    "JustNoMIL":           ["#FamilyDrama", "#RedditStories"],
-    "askcarsales":         ["#CarSales", "#LookOutFraud"],
+    "amitheasshole":       ["#AITA", "#AmITheAsshole", "#RedditStories", "#RedditDrama", "#Verdict"],
+    "relationship_advice": ["#RelationshipAdvice", "#RedditStories", "#Relationships", "#Advice"],
+    "tifu":                ["#TIFU", "#RedditStories", "#FailStory", "#Funny"],
+    "pettyrevenge":        ["#PettyRevenge", "#RedditStories", "#Revenge", "#Justice"],
+    "maliciouscompliance": ["#MaliciousCompliance", "#RedditStories", "#WorkStories", "#Funny"],
+    "choosingbeggars":     ["#ChoosingBeggars", "#RedditStories", "#Entitled", "#Cringe"],
+    "entitledpeople":      ["#Entitled", "#RedditStories", "#Cringe", "#ChoosingBeggars"],
+    "JustNoMIL":           ["#FamilyDrama", "#RedditStories", "#MIL", "#FamilyProblems"],
+    "askcarsales":         ["#CarSales", "#LookOutFraud", "#CarBuying", "#CarTips"],
     # General Reddit
-    "askreddit":           ["#AskReddit", "#RedditStories"],
-    "todayilearned":       ["#TodayILearned", "#FunFacts"],
-    "lifeprotips":         ["#LifeHacks", "#LifeTips"],
+    "askreddit":           ["#AskReddit", "#RedditStories", "#Reddit", "#Discussion"],
+    "todayilearned":       ["#TodayILearned", "#FunFacts", "#DidYouKnow", "#Learning"],
+    "lifeprotips":         ["#LifeHacks", "#LifeTips", "#Tips", "#LifeAdvice"],
     # Gaming
-    "steam":               ["#Steam", "#Gaming", "#PCGaming"],
-    "pcgaming":            ["#PCGaming", "#Gaming", "#Steam"],
-    "gaming":              ["#Gaming", "#Gamers"],
-    "consoles":            ["#ConsoleGaming", "#Gaming"],
-    "WoW":                 ["#WorldOfWarcraft", "#Gaming", "#MMO"],
-    "leagueoflegends":     ["#LeagueOfLegends", "#Esports"],
+    "steam":               ["#Steam", "#Gaming", "#PCGaming", "#SteamDeals", "#PCGamer"],
+    "pcgaming":            ["#PCGaming", "#Gaming", "#Steam", "#PCGamer", "#GamersOfReddit"],
+    "gaming":              ["#Gaming", "#Gamers", "#VideoGames", "#GamingCommunity"],
+    "consoles":            ["#ConsoleGaming", "#Gaming", "#PlayStation", "#Xbox"],
+    "WoW":                 ["#WorldOfWarcraft", "#Gaming", "#MMO", "#WoW"],
+    "leagueoflegends":     ["#LeagueOfLegends", "#Esports", "#Gaming", "#LoL"],
     # Anime & Manga
-    "manga":               ["#Manga", "#Anime", "#RedditStories"],
-    "manhwa":              ["#Manhwa", "#Webtoon", "#RedditStories"],
-    "anime":               ["#Anime", "#AnimeCommunity"],
-    "anime_irl":           ["#Anime", "#Memes"],
+    "manga":               ["#Manga", "#Anime", "#RedditStories", "#MangaArt"],
+    "manhwa":              ["#Manhwa", "#Webtoon", "#RedditStories", "#Korean"],
+    "anime":               ["#Anime", "#AnimeCommunity", "#AnimeFan", "#Otaku"],
+    "anime_irl":           ["#Anime", "#Memes", "#AnimeMemes", "#Otaku"],
     # Lifestyle & Self-improvement
-    "fitness":             ["#Fitness", "#WorkoutTips"],
-    "loseit":              ["#WeightLoss", "#Fitness"],
-    "EatCheapAndHealthy":  ["#EatCheap", "#Recipes"],
-    "personalfinance":     ["#PersonalFinance", "#MoneyTips"],
-    "investing":           ["#Investing", "#Stocks"],
-    "buyitforlife":        ["#BuyItForLife", "#ProductReview", "#LifeHacks"],
-    "asianbeauty":         ["#AsianBeauty", "#Skincare", "#BeautyTips"],
-    "skincare":            ["#Skincare", "#BeautyTips"],
+    "fitness":             ["#Fitness", "#WorkoutTips", "#Gym", "#HealthyLifestyle"],
+    "loseit":              ["#WeightLoss", "#Fitness", "#HealthJourney", "#Diet"],
+    "EatCheapAndHealthy":  ["#EatCheap", "#Recipes", "#BudgetFood", "#MealPrep"],
+    "personalfinance":     ["#PersonalFinance", "#MoneyTips", "#Budgeting", "#SaveMoney"],
+    "investing":           ["#Investing", "#Stocks", "#Finance", "#WealthBuilding"],
+    "buyitforlife":        ["#BuyItForLife", "#ProductReview", "#LifeHacks", "#Shopping"],
+    "asianbeauty":         ["#AsianBeauty", "#Skincare", "#BeautyTips", "#KBeauty"],
+    "skincare":            ["#Skincare", "#BeautyTips", "#GlowUp", "#SkincareTips"],
     # Tech & Programming
-    "programming":         ["#Programming", "#Code"],
-    "learnprogramming":    ["#LearnProgramming", "#Coding"],
-    "webdev":              ["#WebDevelopment", "#Code"],
-    "python":              ["#Python", "#Programming"],
-    "javascript":          ["#JavaScript", "#Programming"],
+    "programming":         ["#Programming", "#Code", "#Developer", "#Tech"],
+    "learnprogramming":    ["#LearnProgramming", "#Coding", "#Developer", "#Tech"],
+    "webdev":              ["#WebDevelopment", "#Code", "#Frontend", "#Tech"],
+    "python":              ["#Python", "#Programming", "#Code", "#DataScience"],
+    "javascript":          ["#JavaScript", "#Programming", "#WebDev", "#Code"],
+}
+
+# Subreddit-specific engagement questions (drives comments)
+_ENGAGEMENT_Q: dict[str, str] = {
+    "steam":               "Would you agree? Drop your take below! 👇",
+    "pcgaming":            "What's YOUR gaming hot take? Comment below! 👇",
+    "gaming":              "Agree or disagree? Let us know! 👇",
+    "consoles":            "Console wars — which side are you on? 👇",
+    "amitheasshole":       "Who's in the wrong? Vote in the comments! 👇",
+    "relationship_advice": "What would YOU do in this situation? 👇",
+    "tifu":                "Would you survive this? Comment below! 👇",
+    "pettyrevenge":        "Was the revenge justified? Let us know! 👇",
+    "maliciouscompliance": "Best malicious compliance you've seen? 👇",
+    "choosingbeggars":     "How would you respond? Comment below! 👇",
+    "entitledpeople":      "How would YOU handle this? Drop a comment! 👇",
+    "askreddit":           "What's YOUR answer? Comment below! 👇",
+    "todayilearned":       "Did you know this? Share your reaction! 👇",
+    "manga":               "What's your favorite manga? Comment below! 👇",
+    "anime":               "Agree with the community? Let us know! 👇",
+    "personalfinance":     "What's your money move? Share below! 👇",
+    "investing":           "Would you make this trade? Comment below! 👇",
+}
+
+# Subreddit-specific CTAs (replaces generic "daily Reddit stories")
+_NICHE_CTA: dict[str, str] = {
+    "steam":               "🔔 Subscribe for daily gaming reactions",
+    "pcgaming":            "🔔 Subscribe for daily PC gaming highlights",
+    "gaming":              "🔔 Subscribe for daily gaming reactions",
+    "consoles":            "🔔 Subscribe for daily gaming content",
+    "amitheasshole":       "🔔 Subscribe for daily AITA verdicts",
+    "relationship_advice": "🔔 Subscribe for daily relationship stories",
+    "tifu":                "🔔 Subscribe for daily Reddit fails",
+    "pettyrevenge":        "🔔 Subscribe for daily revenge stories",
+    "maliciouscompliance": "🔔 Subscribe for daily Reddit stories",
+    "manga":               "🔔 Subscribe for daily manga community picks",
+    "anime":               "🔔 Subscribe for daily anime community picks",
+    "personalfinance":     "🔔 Subscribe for daily money tips from Reddit",
+    "investing":           "🔔 Subscribe for daily investing discussions",
 }
 
 # Prefixes to strip from Reddit titles before using as YouTube title
@@ -60,6 +98,47 @@ _STRIP_PREFIXES = re.compile(
     r"|\[disc\]|\[title\]|\[chapter\s*\d*\]|\[review\])\s*(for|by|:)?\s*",
     re.IGNORECASE,
 )
+
+# Context prefixes injected into short gaming titles
+_GAMING_BOOST: dict[str, str] = {
+    "steam":          "Steam community: ",
+    "pcgaming":       "PC gamers react: ",
+    "gaming":         "Gamers react: ",
+    "consoles":       "Console gamers: ",
+    "videogaming":    "Gaming community: ",
+    "wow":            "WoW players: ",
+    "leagueoflegends": "League community: ",
+}
+
+# Context prefixes injected into short story/AITA titles
+_STORY_BOOST: dict[str, str] = {
+    "amitheasshole":       "Reddit has voted: ",
+    "relationship_advice": "Reddit weighs in: ",
+    "pettyrevenge":        "Sweet revenge: ",
+    "maliciouscompliance": "Malicious compliance: ",
+    "choosingbeggars":     "Entitled moment: ",
+    "entitledpeople":      "Entitlement alert: ",
+}
+
+_BOOST_THRESHOLD = 32   # boost when emoji_len + text_len is below this
+_BOOST_MAX_TOTAL = 55   # don't boost if result would exceed this
+
+
+def _boost_short_title(text: str, sub_key: str, emoji_prefix_len: int) -> str:
+    """Prepend a subreddit context prefix when title is too short to be engaging."""
+    if emoji_prefix_len + len(text) >= _BOOST_THRESHOLD:
+        return text
+
+    prefix = _GAMING_BOOST.get(sub_key) or _STORY_BOOST.get(sub_key)
+    if not prefix:
+        return text
+
+    candidate = f"{prefix}{text}"
+    if emoji_prefix_len + len(candidate) <= _BOOST_MAX_TOTAL:
+        return candidate
+
+    return text
+
 
 # Subreddit-level story type for the description intro sentence
 _SUBREDDIT_INTRO: dict[str, str] = {
@@ -292,6 +371,10 @@ class MetaGenerator:
         if not text:
             text = post.title.strip()
 
+        # Boost very short titles with a subreddit context prefix
+        if not is_update:
+            text = _boost_short_title(text, sub_key, len(emoji_prefix))
+
         # Optimal range: 40-55 chars (sweet spot for mobile)
         # Hard cap: 60 chars (YouTube Shorts limit)
         # Reserve space for: emoji(3) + space(1) + update_badge(8) + "…"(3) + verdict(6) = ~21 chars
@@ -323,9 +406,9 @@ class MetaGenerator:
 
     @staticmethod
     def generate_hashtags(post, verdict: str | None = None) -> str:
-        """Return a space-joined hashtag string (3-5 tags, always #Shorts #Reddit)."""
+        """Return a space-joined hashtag string (5-8 tags, always #Shorts #Reddit)."""
         sub_key = post.subreddit.lower().split("+")[0]  # e.g. "Steam+pcgaming" → "steam"
-        niche = _SUBREDDIT_TAGS.get(sub_key, ["#RedditStories"])[:2]
+        niche = _SUBREDDIT_TAGS.get(sub_key, ["#RedditStories"])[:5]
 
         tags = ["#Shorts", "#Reddit"] + niche
         if verdict in ("NTA", "YTA", "ESH"):
@@ -337,7 +420,7 @@ class MetaGenerator:
             if t not in seen:
                 seen.add(t)
                 unique.append(t)
-        return " ".join(unique[:5])
+        return " ".join(unique[:8])
 
     @staticmethod
     def generate_description(post, verdict: str | None = None) -> str:
@@ -365,10 +448,12 @@ class MetaGenerator:
             # Use heuristic to generate hook for unknown subreddit
             hook = _generate_hook_heuristic(sub_key, intro)
 
-        # Build 1-sentence summary from body (first 120 chars) or title
+        # Summary: prefer body, fall back to top comment, then title
         intro = _SUBREDDIT_INTRO.get(sub_key, "A Redditor shares their story")
-        source = (post.body or post.title).strip()
-        # Strip markdown-ish noise
+        body = (post.body or "").strip()
+        if not body and getattr(post, "comments", None):
+            body = post.comments[0].body  # top comment as teaser
+        source = body or post.title
         source = re.sub(r"\*+|#+|`+", "", source)
         source = re.sub(r"\s+", " ", source).strip()
 
@@ -379,25 +464,48 @@ class MetaGenerator:
 
         summary = f"{intro} — {summary_raw.rstrip('.,')}."
 
-        hashtags = MetaGenerator.generate_hashtags(post, verdict=verdict)
-        cta = "🔔 Subscribe for daily Reddit stories"
+        # Social proof: show upvote count for popular posts
+        score = getattr(post, "score", 0)
+        if score >= 1000:
+            score_str = f"{score / 1000:.1f}k"
+            social_proof = f"🔥 {score_str} upvotes on Reddit"
+        else:
+            social_proof = ""
 
         # Verdict badge for judgment stories
-        verdict_line = f"Reddit voted: {verdict} 🏆\n\n" if verdict else ""
+        verdict_line = f"Reddit voted: {verdict} 🏆" if verdict else ""
 
-        # Build final description
-        desc = f"{hook}\n\n{summary}\n\n{verdict_line}{hashtags}\n{cta}"
+        # Engagement question (drives comments)
+        engagement = _ENGAGEMENT_Q.get(sub_key, "What do YOU think? Comment below! 👇")
 
-        # Hard cap 500 chars (YouTube shows ~250 before "Show more")
+        hashtags = MetaGenerator.generate_hashtags(post, verdict=verdict)
+        cta = _NICHE_CTA.get(sub_key, "🔔 Subscribe for daily Reddit stories")
+
+        # Build description from non-empty parts
+        parts = [hook]
+        if social_proof:
+            parts.append(social_proof)
+        parts.append(summary)
+        if verdict_line:
+            parts.append(verdict_line)
+        parts.append(engagement)
+        parts.append(f"{hashtags}\n{cta}")
+
+        desc = "\n\n".join(parts)
+
+        # Hard cap 500 chars — trim summary if needed
         if len(desc) > 500:
-            # Shorten summary only, preserve hook and hashtags
-            fixed = f"{hook}\n\n\n\n{verdict_line}{hashtags}\n{cta}"
-            max_summary = 500 - len(fixed) - 5
-            if max_summary > 20:
-                summary = summary[:max_summary].rsplit(" ", 1)[0] + "…"
-            else:
-                summary = ""  # If too constrained, skip summary
-            desc = f"{hook}\n\n{summary}\n\n{verdict_line}{hashtags}\n{cta}".strip()
+            fixed_parts = [hook]
+            if social_proof:
+                fixed_parts.append(social_proof)
+            fixed_parts += ([verdict_line] if verdict_line else [])
+            fixed_parts += [engagement, f"{hashtags}\n{cta}"]
+            fixed = "\n\n".join(fixed_parts)
+            budget = 500 - len(fixed) - 4  # 4 = "\n\n" separator
+            if budget > 20:
+                short_summary = summary[:budget].rsplit(" ", 1)[0] + "…"
+                fixed_parts.insert(1 + bool(social_proof), short_summary)
+            desc = "\n\n".join(p for p in fixed_parts if p).strip()
 
         return desc
 

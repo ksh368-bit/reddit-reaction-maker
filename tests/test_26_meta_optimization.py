@@ -207,9 +207,9 @@ def test_hashtags_consistency():
     assert "#Shorts" in tags
     assert "#Reddit" in tags
 
-    # Should not exceed 5 hashtags
+    # Should not exceed 8 hashtags
     tag_list = tags.split()
-    assert len(tag_list) <= 5, f"Too many tags: {len(tag_list)}"
+    assert len(tag_list) <= 8, f"Too many tags: {len(tag_list)}"
 
 
 def test_description_no_duplicate_content():

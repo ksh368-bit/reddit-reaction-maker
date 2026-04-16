@@ -615,10 +615,22 @@ class VideoComposer:
 
             # Save thumbnail before cleaning up cards
             import shutil
-            hook_src = os.path.join(cards_dir, "_hook.png")
-            if os.path.exists(hook_src):
-                thumb_dst = os.path.splitext(output_path)[0] + "_thumb.png"
-                shutil.copy2(hook_src, thumb_dst)
+            thumb_dst = os.path.splitext(output_path)[0] + "_thumb.png"
+            try:
+                from video.card_renderer import render_thumbnail
+                thumb_img = render_thumbnail(
+                    title=post.title,
+                    subreddit=getattr(post, "subreddit", ""),
+                    video_width=self.width,
+                    video_height=self.height,
+                    font_path=self.font_path,
+                )
+                thumb_img.save(thumb_dst, "PNG")
+            except Exception as e:
+                console.print(f"  [yellow]Thumbnail render error: {e}[/yellow]")
+                hook_src = os.path.join(cards_dir, "_hook.png")
+                if os.path.exists(hook_src):
+                    shutil.copy2(hook_src, thumb_dst)
 
             # Clean up card images
             shutil.rmtree(cards_dir, ignore_errors=True)

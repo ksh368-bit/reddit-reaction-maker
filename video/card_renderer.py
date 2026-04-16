@@ -706,6 +706,166 @@ def render_verdict_card(verdict: str, video_width: int, video_height: int,
 
 
 # ──────────────────────────────────────────────
+#  6. Dedicated thumbnail renderer
+# ──────────────────────────────────────────────
+
+_THUMB_EMOJI: dict[str, str] = {
+    "steam": "🎮", "pcgaming": "🖥️", "gaming": "🎮", "consoles": "🎮",
+    "videogaming": "🎮", "wow": "⚔️", "leagueoflegends": "⚔️",
+    "amitheasshole": "😤", "relationship_advice": "💔", "tifu": "😬",
+    "pettyrevenge": "😈", "maliciouscompliance": "🙃",
+    "choosingbeggars": "🤦", "entitledpeople": "🙄", "justnoMIL": "😡",
+    "askcarsales": "🚗", "askreddit": "🤔", "todayilearned": "💡",
+    "manga": "📖", "manhwa": "📖", "anime": "🎬",
+    "personalfinance": "💰", "investing": "📈",
+    "programming": "💻", "python": "🐍", "javascript": "⚡",
+}
+
+# (top_color, bottom_color, accent_color) per subreddit category
+_THUMB_SCHEME: dict[str, tuple] = {
+    "gaming":       ((12, 18, 45),  (4, 8, 22),   (255, 69,  0)),
+    "aita":         ((35, 8,  8),   (12, 3,  3),  (220, 50,  50)),
+    "relationship": ((22, 8,  35),  (8,  3,  18), (200, 100, 255)),
+    "tech":         ((8,  25, 35),  (3,  10, 15), (0,  180, 255)),
+    "finance":      ((8,  30, 12),  (3,  12, 5),  (50, 220,  80)),
+    "default":      ((18, 18, 22),  (6,  6,  8),  (255, 200,  0)),
+}
+
+_GAMING_SUBS  = {"steam", "pcgaming", "gaming", "consoles", "videogaming", "wow", "leagueoflegends"}
+_AITA_SUBS    = {"amitheasshole", "relationship_advice", "pettyrevenge",
+                 "maliciouscompliance", "choosingbeggars", "entitledpeople", "justnoMIL"}
+_TECH_SUBS    = {"programming", "learnprogramming", "webdev", "python", "javascript"}
+_FINANCE_SUBS = {"personalfinance", "investing", "frugal"}
+
+
+def _make_gradient(width: int, height: int,
+                   top: tuple[int, int, int],
+                   bottom: tuple[int, int, int]) -> Image.Image:
+    """Fast vertical gradient using 32 bands."""
+    bands = 32
+    band_h = max(1, height // bands)
+    img = Image.new("RGB", (width, height), top)
+    draw = ImageDraw.Draw(img)
+    for i in range(bands + 1):
+        t = i / bands
+        r = int(top[0] * (1 - t) + bottom[0] * t)
+        g = int(top[1] * (1 - t) + bottom[1] * t)
+        b = int(top[2] * (1 - t) + bottom[2] * t)
+        y0 = i * band_h
+        y1 = min(y0 + band_h, height)
+        draw.rectangle([0, y0, width, y1], fill=(r, g, b))
+    return img
+
+
+def render_thumbnail(
+    title: str,
+    subreddit: str = "",
+    video_width: int = 1080,
+    video_height: int = 1920,
+    font_path: str | None = None,
+) -> Image.Image:
+    """
+    Generate a YouTube-ready thumbnail (RGB, no transparency).
+
+    Layout:
+      - Dark gradient background (subreddit-themed)
+      - Large emoji icon (upper-center)
+      - Bold white title text (center, 2-3 lines)
+      - Accent bar at bottom
+      - r/subreddit label (bottom)
+    """
+    sub_lower = subreddit.lower()
+
+    # Pick color scheme
+    if sub_lower in _GAMING_SUBS:
+        scheme = _THUMB_SCHEME["gaming"]
+    elif sub_lower in _AITA_SUBS:
+        scheme = _THUMB_SCHEME["aita"]
+    elif sub_lower in _TECH_SUBS:
+        scheme = _THUMB_SCHEME["tech"]
+    elif sub_lower in _FINANCE_SUBS:
+        scheme = _THUMB_SCHEME["finance"]
+    else:
+        scheme = _THUMB_SCHEME["default"]
+
+    top_color, bottom_color, accent_color = scheme
+
+    # Build gradient background
+    img = _make_gradient(video_width, video_height, top_color, bottom_color)
+    draw = ImageDraw.Draw(img)
+
+    # Subtle vignette: darken edges
+    vignette = Image.new("RGBA", (video_width, video_height), (0, 0, 0, 0))
+    vd = ImageDraw.Draw(vignette)
+    spread = video_width // 3
+    for i in range(spread):
+        alpha = int(90 * (1 - i / spread))
+        vd.rectangle([0, 0, i, video_height], fill=(0, 0, 0, alpha))
+        vd.rectangle([video_width - i, 0, video_width, video_height], fill=(0, 0, 0, alpha))
+    img = Image.alpha_composite(img.convert("RGBA"), vignette).convert("RGB")
+    draw = ImageDraw.Draw(img)
+
+    # Decorative icon: filled circle with accent color (works on all systems)
+    icon_r = min(90, video_width // 10)
+    icon_cx = video_width // 2
+    icon_cy = int(video_height * 0.22)
+    draw.ellipse(
+        [icon_cx - icon_r, icon_cy - icon_r, icon_cx + icon_r, icon_cy + icon_r],
+        fill=accent_color,
+    )
+    # Inner symbol: upvote-style triangle
+    tri_size = icon_r // 2
+    tri_x, tri_y = icon_cx, icon_cy - tri_size // 2
+    draw.polygon(
+        [(tri_x, tri_y - tri_size),
+         (tri_x - tri_size, tri_y + tri_size // 2),
+         (tri_x + tri_size, tri_y + tri_size // 2)],
+        fill=(255, 255, 255),
+    )
+
+    # Title text — large, bold, centered
+    title_size = min(130, video_width // 7)
+    title_font = _load_bold_font(font_path, title_size)
+    padding = 80
+    content_w = video_width - padding * 2
+
+    lines = _wrap_text(draw, title, title_font, content_w)[:3]
+    line_h = int(title_size * 1.35)
+    block_h = len(lines) * line_h
+
+    # Position: vertically centered (slightly below middle to account for emoji above)
+    y_center = int(video_height * 0.55)
+    y = y_center - block_h // 2
+
+    for line in lines:
+        bb = draw.textbbox((0, 0), line, font=title_font)
+        lw = bb[2] - bb[0]
+        x = (video_width - lw) // 2 - bb[0]
+        draw.text((x, y), line, font=title_font, fill=(255, 255, 255),
+                  stroke_width=6, stroke_fill=(0, 0, 0))
+        y += line_h
+
+    # Accent bar
+    bar_y = int(video_height * 0.82)
+    bar_h = 8
+    draw.rectangle([padding, bar_y, video_width - padding, bar_y + bar_h],
+                   fill=accent_color)
+
+    # r/subreddit label
+    if subreddit:
+        label = f"r/{subreddit}"
+        label_font = _load_font(font_path, 52)
+        lb = draw.textbbox((0, 0), label, font=label_font)
+        lx = (video_width - (lb[2] - lb[0])) // 2 - lb[0]
+        ly = bar_y + bar_h + 28
+        draw.text((lx, ly), label, font=label_font,
+                  fill=(*accent_color, 255) if len(accent_color) == 3 else accent_color,
+                  stroke_width=2, stroke_fill=(0, 0, 0))
+
+    return img
+
+
+# ──────────────────────────────────────────────
 #  Batch renderer
 # ──────────────────────────────────────────────
 

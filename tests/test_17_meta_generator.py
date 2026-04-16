@@ -101,11 +101,11 @@ class TestHashtags:
         tags = MetaGenerator.generate_hashtags(post)
         assert "#Gaming" in tags or "#Steam" in tags
 
-    def test_tag_count_between_3_and_5(self):
+    def test_tag_count_between_3_and_8(self):
         post = make_post()
         tags = MetaGenerator.generate_hashtags(post)
         count = len([t for t in tags.split() if t.startswith("#")])
-        assert 3 <= count <= 5
+        assert 3 <= count <= 8
 
 
 class TestDescription:
