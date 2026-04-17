@@ -624,6 +624,8 @@ class VideoComposer:
                     video_width=self.width,
                     video_height=self.height,
                     font_path=self.font_path,
+                    score=getattr(post, "score", 0),
+                    num_comments=getattr(post, "num_comments", 0),
                 )
                 thumb_img.save(thumb_dst, "PNG")
             except Exception as e:

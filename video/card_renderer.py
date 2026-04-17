@@ -82,7 +82,8 @@ def extract_hook_text(title: str) -> str:
 
 
 def detect_keyword(text: str) -> str | None:
-    """Extract a short highlight keyword: dollar amounts → K/M numbers → large numbers → percentages."""
+    """Extract a short highlight keyword: dollar amounts → K/M numbers →
+    comma-separated large numbers → percentages → bare 3+ digit numbers."""
     m = re.search(r'\$\s*[\d,]+(?:\.\d+)?\s*[KMBkmb]?', text)
     if m:
         kw = re.sub(r'\s+', '', m.group()).upper()
@@ -96,6 +97,12 @@ def detect_keyword(text: str) -> str | None:
     m = re.search(r'\b\d+\s*%', text)
     if m:
         return re.sub(r'\s+', '', m.group())
+    # Bare 3+ digit numbers (e.g. "3000 games", "1500 items") — triggers only
+    # for meaningfully large counts so small incidental numbers don't grab
+    # the badge spot.
+    m = re.search(r'\b\d{3,}\b', text)
+    if m:
+        return m.group()
     return None
 
 
@@ -719,6 +726,9 @@ _THUMB_EMOJI: dict[str, str] = {
     "manga": "📖", "manhwa": "📖", "anime": "🎬",
     "personalfinance": "💰", "investing": "📈",
     "programming": "💻", "python": "🐍", "javascript": "⚡",
+    # Product / lifestyle
+    "buyitforlife": "💡", "lifeprotips": "💡", "frugal": "💰",
+    "mildlyinteresting": "✨", "showerthoughts": "🤯",
 }
 
 # (top_color, bottom_color, accent_color) per subreddit category
@@ -736,6 +746,68 @@ _AITA_SUBS    = {"amitheasshole", "relationship_advice", "pettyrevenge",
                  "maliciouscompliance", "choosingbeggars", "entitledpeople", "justnoMIL"}
 _TECH_SUBS    = {"programming", "learnprogramming", "webdev", "python", "javascript"}
 _FINANCE_SUBS = {"personalfinance", "investing", "frugal"}
+
+
+_TRAILING_PREPOSITIONS = {
+    "for", "of", "in", "on", "at", "to", "with", "from", "over", "under",
+    "by", "per",
+}
+
+
+def _strip_keyword_from_title(title: str, keyword: str | None) -> str:
+    """Remove the keyword from title text (case-insensitive) and normalize spaces.
+
+    Used when the keyword is shown separately as a large badge — prevents
+    visual duplication between badge and title text.
+
+    Grammar-safe: if the keyword is followed by a preposition (e.g.
+    "$500 for rent"), stripping would orphan the preposition. In that case
+    we keep the original title to preserve readability.
+    """
+    if not keyword:
+        return title
+    # Check if keyword is mid-sentence followed by a preposition. If so,
+    # removing it would leave awkward grammar ("...pay my roommate for rent").
+    after_match = re.search(
+        re.escape(keyword) + r"\s+(\w+)", title, flags=re.IGNORECASE
+    )
+    if after_match and after_match.group(1).lower() in _TRAILING_PREPOSITIONS:
+        return title
+    # Safe to strip
+    pattern = re.escape(keyword)
+    cleaned = re.sub(pattern, "", title, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    cleaned = re.sub(r"\s+([,.!?])", r"\1", cleaned)
+    return cleaned or title
+
+
+_APPLE_COLOR_EMOJI = "/System/Library/Fonts/Apple Color Emoji.ttc"
+_EMOJI_NATIVE_SIZE = 160  # Apple Color Emoji only loads at specific bitmap sizes
+
+
+def _render_color_emoji(emoji_char: str, target_size: int) -> Image.Image | None:
+    """Render a color emoji at target_size px. Returns None if unavailable."""
+    if not os.path.exists(_APPLE_COLOR_EMOJI):
+        return None
+    try:
+        font = ImageFont.truetype(_APPLE_COLOR_EMOJI, _EMOJI_NATIVE_SIZE)
+    except OSError:
+        return None
+    # Render to an oversized canvas at native bitmap size, then scale down
+    canvas = Image.new("RGBA", (_EMOJI_NATIVE_SIZE + 40, _EMOJI_NATIVE_SIZE + 40),
+                       (0, 0, 0, 0))
+    ImageDraw.Draw(canvas).text((20, 0), emoji_char, font=font, embedded_color=True)
+    # Crop to content bbox for tight placement
+    bbox = canvas.getbbox()
+    if bbox:
+        canvas = canvas.crop(bbox)
+    # Resize to target
+    if target_size != canvas.size[0]:
+        canvas = canvas.resize(
+            (target_size, int(canvas.size[1] * target_size / canvas.size[0])),
+            Image.Resampling.LANCZOS,
+        )
+    return canvas
 
 
 def _make_gradient(width: int, height: int,
@@ -763,6 +835,8 @@ def render_thumbnail(
     video_width: int = 1080,
     video_height: int = 1920,
     font_path: str | None = None,
+    score: int = 0,
+    num_comments: int = 0,
 ) -> Image.Image:
     """
     Generate a YouTube-ready thumbnail (RGB, no transparency).
@@ -805,37 +879,114 @@ def render_thumbnail(
     img = Image.alpha_composite(img.convert("RGBA"), vignette).convert("RGB")
     draw = ImageDraw.Draw(img)
 
-    # Decorative icon: filled circle with accent color (works on all systems)
-    icon_r = min(90, video_width // 10)
+    # Decorative icon: real Apple Color Emoji if available, fallback to
+    # accent circle + upvote triangle. Emoji gives a polished neophyte-friendly
+    # look vs the previous geometric placeholder.
+    icon_size = min(400, video_width // 3)
     icon_cx = video_width // 2
-    icon_cy = int(video_height * 0.22)
-    draw.ellipse(
-        [icon_cx - icon_r, icon_cy - icon_r, icon_cx + icon_r, icon_cy + icon_r],
-        fill=accent_color,
-    )
-    # Inner symbol: upvote-style triangle
-    tri_size = icon_r // 2
-    tri_x, tri_y = icon_cx, icon_cy - tri_size // 2
-    draw.polygon(
-        [(tri_x, tri_y - tri_size),
-         (tri_x - tri_size, tri_y + tri_size // 2),
-         (tri_x + tri_size, tri_y + tri_size // 2)],
-        fill=(255, 255, 255),
-    )
+    icon_cy = int(video_height * 0.18)
+    emoji_char = _THUMB_EMOJI.get(sub_lower)
+    emoji_img = _render_color_emoji(emoji_char, icon_size) if emoji_char else None
 
-    # Title text — large, bold, centered
-    title_size = min(130, video_width // 7)
-    title_font = _load_bold_font(font_path, title_size)
+    if emoji_img is not None:
+        # Paste the color emoji, centered
+        ex = icon_cx - emoji_img.size[0] // 2
+        ey = icon_cy - emoji_img.size[1] // 2
+        # Composite onto RGB img via alpha paste
+        img_rgba = img.convert("RGBA")
+        img_rgba.alpha_composite(emoji_img, (ex, ey))
+        img = img_rgba.convert("RGB")
+        draw = ImageDraw.Draw(img)
+    else:
+        # Fallback: accent circle + white upvote triangle
+        icon_r = min(90, video_width // 10)
+        draw.ellipse(
+            [icon_cx - icon_r, icon_cy - icon_r, icon_cx + icon_r, icon_cy + icon_r],
+            fill=accent_color,
+        )
+        tri_size = icon_r // 2
+        tri_x, tri_y = icon_cx, icon_cy - tri_size // 2
+        draw.polygon(
+            [(tri_x, tri_y - tri_size),
+             (tri_x - tri_size, tri_y + tri_size // 2),
+             (tri_x + tri_size, tri_y + tri_size // 2)],
+            fill=(255, 255, 255),
+        )
+
+    # Keyword badge — if the title contains a money amount or big number,
+    # render it as a large accent-color pill below the icon. Drives neophyte
+    # CTR by giving a single strong focal point the eye catches first.
+    #
+    # Duplication guard: only render the badge when the keyword can be
+    # stripped from the title text. If the preposition guard forces the
+    # keyword to remain in the title (e.g. "$500 for rent"), showing a
+    # badge on top would display the same value twice.
+    keyword = detect_keyword(title)
+    hook_title = extract_hook_text(title)
+    stripped_title = _strip_keyword_from_title(hook_title, keyword) if keyword else hook_title
+    badge_visible = bool(keyword) and stripped_title != hook_title
+    badge_bottom_y = icon_cy + icon_size // 2  # default: below icon
+    if badge_visible:
+        kw_size = min(200, video_width // 5)
+        kw_font = _load_bold_font(font_path, kw_size)
+        kb = draw.textbbox((0, 0), keyword, font=kw_font)
+        kw_w = kb[2] - kb[0]
+        kw_h = kb[3] - kb[1]
+        hp, vp = 56, 28
+        box_w = kw_w + hp * 2
+        box_h = kw_h + vp * 2
+        bx = (video_width - box_w) // 2
+        by = int(video_height * 0.28)
+        draw.rounded_rectangle(
+            [bx, by, bx + box_w, by + box_h],
+            radius=24, fill=accent_color,
+        )
+        draw.text(
+            (bx + hp - kb[0], by + vp - kb[1]),
+            keyword, font=kw_font, fill=(255, 255, 255),
+            stroke_width=4, stroke_fill=(0, 0, 0),
+        )
+        badge_bottom_y = by + box_h
+
+    # Title text — strip AITA/WIBTA preambles; remove the keyword only when
+    # the badge above is actually showing it (otherwise the keyword needs to
+    # stay in the sentence for grammar).
+    display_title = stripped_title if badge_visible else hook_title
     padding = 80
     content_w = video_width - padding * 2
 
-    lines = _wrap_text(draw, title, title_font, content_w)[:3]
+    # Auto-shrink: start at max size, shrink until wrapped text fits in 4 lines
+    # without mid-word truncation. Prevents "Just passed 3000 games owned on"
+    # cutting off "Steam".
+    max_lines = 4
+    title_size = min(130, video_width // 7)
+    while title_size >= 70:
+        title_font = _load_bold_font(font_path, title_size)
+        lines = _wrap_text(draw, display_title, title_font, content_w)
+        if len(lines) <= max_lines:
+            break
+        title_size -= 8
+    else:
+        title_font = _load_bold_font(font_path, title_size)
+        lines = _wrap_text(draw, display_title, title_font, content_w)[:max_lines]
+
     line_h = int(title_size * 1.35)
     block_h = len(lines) * line_h
 
-    # Position: vertically centered (slightly below middle to account for emoji above)
-    y_center = int(video_height * 0.55)
-    y = y_center - block_h // 2
+    # Vertical position: center the title block in the space between the
+    # badge/icon bottom and the accent bar. Prevents short titles from
+    # leaving a giant void above the bottom bar (TIFU case).
+    bar_y = int(video_height * 0.82)
+    available_top = badge_bottom_y + 40
+    available_bot = bar_y - 40
+    if block_h < (available_bot - available_top):
+        # Bias toward the bottom: title reads with the accent bar/score row
+        # as a single anchored block; a big gap above looks more natural than
+        # a big gap below (which reads as "empty footer").
+        slack = (available_bot - available_top) - block_h
+        y = available_top + int(slack * 0.7)
+    else:
+        y = available_top
 
     for line in lines:
         bb = draw.textbbox((0, 0), line, font=title_font)
@@ -846,21 +997,87 @@ def render_thumbnail(
         y += line_h
 
     # Accent bar
-    bar_y = int(video_height * 0.82)
     bar_h = 8
     draw.rectangle([padding, bar_y, video_width - padding, bar_y + bar_h],
                    fill=accent_color)
 
-    # r/subreddit label
+    # Reddit-native bottom row: r/subreddit + upvote arrow + score + comments.
+    # Makes the thumbnail look like an enlarged Reddit post — strong brand
+    # signal on the channel page / search result grid.
+    label_font = _load_bold_font(font_path, 52)
+    meta_font = _load_font(font_path, 44)
+    row_y = bar_y + bar_h + 32
+
+    # r/subreddit (bold, accent color)
     if subreddit:
-        label = f"r/{subreddit}"
-        label_font = _load_font(font_path, 52)
-        lb = draw.textbbox((0, 0), label, font=label_font)
-        lx = (video_width - (lb[2] - lb[0])) // 2 - lb[0]
-        ly = bar_y + bar_h + 28
-        draw.text((lx, ly), label, font=label_font,
-                  fill=(*accent_color, 255) if len(accent_color) == 3 else accent_color,
-                  stroke_width=2, stroke_fill=(0, 0, 0))
+        sub_label = f"r/{subreddit}"
+        sb = draw.textbbox((0, 0), sub_label, font=label_font)
+        sw = sb[2] - sb[0]
+    else:
+        sub_label = ""
+        sw = 0
+
+    # Upvote icon (accent-colored arrow) + score
+    icon_sz = 46
+    score_str = _format_score(score) if score > 0 else ""
+    score_bb = draw.textbbox((0, 0), score_str, font=label_font) if score_str else (0, 0, 0, 0)
+    score_w = score_bb[2] - score_bb[0]
+
+    # Comments (drawn speech-bubble icon + count — avoids 💬 font-fallback tofu)
+    comments_num = _format_score(num_comments) if num_comments > 0 else ""
+    comment_icon_sz = 38
+    cb = draw.textbbox((0, 0), comments_num, font=meta_font) if comments_num else (0, 0, 0, 0)
+    comments_w = (comment_icon_sz + 12 + (cb[2] - cb[0])) if comments_num else 0
+
+    # Layout: [r/sub]  [▲ score]  [💬 comments], centered as a group
+    gap = 40
+    group_parts = []
+    if sub_label:
+        group_parts.append(("sub", sw))
+    if score_str:
+        group_parts.append(("score", icon_sz + 12 + score_w))
+    if comments_num:
+        group_parts.append(("comments", comments_w))
+    total_w = sum(w for _, w in group_parts) + gap * max(0, len(group_parts) - 1)
+    x = (video_width - total_w) // 2
+
+    for kind, w in group_parts:
+        if kind == "sub":
+            draw.text((x, row_y), sub_label, font=label_font,
+                      fill=accent_color, stroke_width=2, stroke_fill=(0, 0, 0))
+        elif kind == "score":
+            # Upvote triangle
+            ty = row_y + 6
+            draw.polygon(
+                [(x + icon_sz // 2, ty),
+                 (x, ty + icon_sz),
+                 (x + icon_sz, ty + icon_sz)],
+                fill=accent_color,
+            )
+            draw.text((x + icon_sz + 12, row_y), score_str,
+                      font=label_font, fill=(240, 240, 240),
+                      stroke_width=2, stroke_fill=(0, 0, 0))
+        elif kind == "comments":
+            # Drawn speech-bubble icon (rounded rect with a tail notch)
+            ix = x
+            iy = row_y + 8
+            bubble_w = comment_icon_sz
+            bubble_h = comment_icon_sz - 6
+            draw.rounded_rectangle(
+                [ix, iy, ix + bubble_w, iy + bubble_h],
+                radius=8, outline=(200, 200, 200), width=4,
+            )
+            # Tail triangle on bottom-left
+            draw.polygon(
+                [(ix + 8, iy + bubble_h),
+                 (ix + 16, iy + bubble_h),
+                 (ix + 8, iy + bubble_h + 8)],
+                fill=(200, 200, 200),
+            )
+            draw.text((x + comment_icon_sz + 12, row_y + 4),
+                      comments_num, font=meta_font, fill=(200, 200, 200),
+                      stroke_width=2, stroke_fill=(0, 0, 0))
+        x += w + gap
 
     return img
 
