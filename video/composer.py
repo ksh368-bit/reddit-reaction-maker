@@ -299,6 +299,39 @@ class VideoComposer:
         bar = VideoClip(make_frame, duration=total_duration)
         return bar.with_position((0, self.height - bar_height))
 
+    def _create_subscribe_overlay_clip(
+        self, total_duration: float, temp_dir: str
+    ) -> ImageClip | None:
+        """End-screen subscribe CTA: big red SUBSCRIBE pill overlay during
+        the final ~2.5 seconds.
+
+        Driving metric: YouTube Studio shows ~0 subscribers gained per
+        week. A prominent subscribe reminder at the end is a proven
+        Shorts conversion pattern.
+        """
+        # Need at least 1s of video to bother with the CTA
+        if total_duration < 1.0:
+            return None
+
+        try:
+            from video.card_renderer import render_subscribe_overlay
+            overlay_img = render_subscribe_overlay(
+                video_width=self.width,
+                video_height=self.height,
+                font_path=self.font_path,
+            )
+            path = os.path.join(temp_dir, "_subscribe_overlay.png")
+            overlay_img.save(path, "PNG")
+
+            cta_duration = min(2.5, total_duration - 0.05)
+            start = max(0.0, total_duration - cta_duration)
+            clip = ImageClip(path, duration=cta_duration).with_position((0, 0))
+            return clip.with_start(start)
+
+        except Exception as e:
+            console.print(f"  [yellow]Subscribe overlay error: {e}[/yellow]")
+            return None
+
     def _create_watermark_clip(
         self, total_duration: float, temp_dir: str
     ) -> ImageClip | None:
@@ -570,6 +603,14 @@ class VideoComposer:
             extra_clips = [progress_bar]
             if watermark_clip is not None:
                 extra_clips.append(watermark_clip)
+
+            # End-screen subscribe CTA — nudges neophytes to subscribe
+            # during the final ~2.5s of the Short.
+            subscribe_clip = self._create_subscribe_overlay_clip(
+                total_duration, cards_dir
+            )
+            if subscribe_clip is not None:
+                extra_clips.append(subscribe_clip)
 
             final_video = CompositeVideoClip(
                 [bg_clip] + overlay_clips + extra_clips,

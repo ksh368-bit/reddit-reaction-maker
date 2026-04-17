@@ -713,6 +713,109 @@ def render_verdict_card(verdict: str, video_width: int, video_height: int,
 
 
 # ──────────────────────────────────────────────
+#  End-screen subscribe CTA overlay
+# ──────────────────────────────────────────────
+
+_YOUTUBE_RED = (204, 0, 0, 255)
+
+
+def render_subscribe_overlay(
+    video_width: int = 1080,
+    video_height: int = 1920,
+    font_path: str | None = None,
+    prompt_text: str = "Enjoyed this story?",
+) -> Image.Image:
+    """
+    Full-canvas RGBA overlay for the last ~2-3 seconds of a Short.
+
+    YouTube Shorts subscribe-conversion pattern:
+      - Dim the bottom third with a dark backing strip
+      - Prompt text ("Enjoyed this story?") above
+      - Large red YouTube-style SUBSCRIBE pill with white text
+      - Small arrow/bell hint below to direct the eye
+
+    Top half is fully transparent so the viewer still sees the last
+    frames of the story.
+    """
+    img = Image.new("RGBA", (video_width, video_height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    # ── Dark backing strip in the lower-middle ────────────────────────
+    strip_top = int(video_height * 0.55)
+    strip_bot = int(video_height * 0.90)
+    draw.rectangle(
+        [0, strip_top, video_width, strip_bot],
+        fill=(0, 0, 0, 170),
+    )
+
+    # ── Prompt text above the button ──────────────────────────────────
+    prompt_size = max(52, video_width // 18)
+    prompt_font = _load_bold_font(font_path, prompt_size)
+    pb = draw.textbbox((0, 0), prompt_text, font=prompt_font)
+    pw = pb[2] - pb[0]
+    ph = pb[3] - pb[1]
+    prompt_x = (video_width - pw) // 2 - pb[0]
+    prompt_y = strip_top + int((strip_bot - strip_top) * 0.14)
+    draw.text(
+        (prompt_x, prompt_y), prompt_text,
+        font=prompt_font, fill=(255, 255, 255, 255),
+        stroke_width=4, stroke_fill=(0, 0, 0, 255),
+    )
+
+    # ── Red SUBSCRIBE pill ────────────────────────────────────────────
+    btn_text = "SUBSCRIBE"
+    btn_size = max(78, video_width // 11)
+    btn_font = _load_bold_font(font_path, btn_size)
+    bb = draw.textbbox((0, 0), btn_text, font=btn_font)
+    tw = bb[2] - bb[0]
+    th = bb[3] - bb[1]
+    h_pad, v_pad = 72, 36
+    box_w = tw + h_pad * 2
+    box_h = th + v_pad * 2
+    bx = (video_width - box_w) // 2
+    by = prompt_y + ph + 48
+
+    # Subtle outer glow for emphasis
+    glow = Image.new("RGBA", (video_width, video_height), (0, 0, 0, 0))
+    glow_draw = ImageDraw.Draw(glow)
+    glow_spread = 22
+    glow_draw.rounded_rectangle(
+        [bx - glow_spread, by - glow_spread,
+         bx + box_w + glow_spread, by + box_h + glow_spread],
+        radius=48, fill=(255, 60, 60, 90),
+    )
+    glow = glow.filter(ImageFilter.GaussianBlur(16))
+    img = Image.alpha_composite(img, glow)
+    draw = ImageDraw.Draw(img)
+
+    # Solid red pill
+    draw.rounded_rectangle(
+        [bx, by, bx + box_w, by + box_h],
+        radius=int(box_h * 0.5), fill=_YOUTUBE_RED,
+    )
+    # White button text
+    draw.text(
+        (bx + h_pad - bb[0], by + v_pad - bb[1]),
+        btn_text, font=btn_font, fill=(255, 255, 255, 255),
+    )
+
+    # ── Arrow hint pointing to the subscribe button in the player UI ──
+    hint_font = _load_font(font_path, max(36, video_width // 26))
+    hint_text = "↓ Tap the red button"
+    hb = draw.textbbox((0, 0), hint_text, font=hint_font)
+    hw = hb[2] - hb[0]
+    hint_x = (video_width - hw) // 2 - hb[0]
+    hint_y = by + box_h + 30
+    draw.text(
+        (hint_x, hint_y), hint_text,
+        font=hint_font, fill=(230, 230, 230, 255),
+        stroke_width=3, stroke_fill=(0, 0, 0, 255),
+    )
+
+    return img
+
+
+# ──────────────────────────────────────────────
 #  6. Dedicated thumbnail renderer
 # ──────────────────────────────────────────────
 
