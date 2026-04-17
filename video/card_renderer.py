@@ -741,11 +741,14 @@ def render_subscribe_overlay(
     draw = ImageDraw.Draw(img)
 
     # ── Dark backing strip in the lower-middle ────────────────────────
+    # Near-opaque so it fully hides any caption/CTA text still on screen
+    # in the final seconds — prevents bleed-through overlap with the
+    # SUBSCRIBE prompt.
     strip_top = int(video_height * 0.55)
     strip_bot = int(video_height * 0.90)
     draw.rectangle(
         [0, strip_top, video_width, strip_bot],
-        fill=(0, 0, 0, 170),
+        fill=(10, 10, 10, 245),
     )
 
     # ── Prompt text above the button ──────────────────────────────────

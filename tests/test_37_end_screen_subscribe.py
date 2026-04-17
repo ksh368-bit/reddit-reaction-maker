@@ -72,6 +72,26 @@ class TestSubscribeButton:
         )
 
 
+class TestBackingStripOpacity:
+    """Backing strip must be opaque enough to fully hide any existing
+    caption/CTA overlays underneath — otherwise they bleed through and
+    overlap visibly with the SUBSCRIBE prompt text."""
+
+    def test_middle_of_strip_is_near_opaque(self):
+        img = render_subscribe_overlay()
+        # Sample a horizontal band at y ~= 62% of height (middle of strip,
+        # above the button, where the prompt text sits over dark backing).
+        # Use a column away from the red button area (x=60..200).
+        w, h = img.size
+        y = int(h * 0.62)
+        alphas = [img.getpixel((x, y))[3] for x in range(60, 200)]
+        min_alpha = min(alphas)
+        assert min_alpha >= 230, (
+            f"Backing strip should be near-opaque to hide underlying "
+            f"captions (min alpha at y={y} was {min_alpha})"
+        )
+
+
 class TestCustomization:
     def test_respects_custom_dimensions(self):
         img = render_subscribe_overlay(video_width=720, video_height=1280)
