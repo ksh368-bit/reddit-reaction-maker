@@ -145,16 +145,14 @@ class RedditScraper:
     _VERDICT_START_RE = _re.compile(r'^\s*(NTA|YTA|ESH|NAH|INFO)\b', _re.IGNORECASE)
 
     # Per-subreddit filter tiers based on YouTube Studio performance data.
-    # Poor-performing categories (AITA/PettyRevenge/tifu) require much higher
-    # upvote/comment thresholds so only top-of-top drama passes through;
-    # strong categories (Steam/manga/BuyItForLife) use config defaults.
+    # AITA-style long-form drama subs require high thresholds to filter for
+    # only top-of-top posts (historically poor CTR for mid-tier posts).
+    # pettyrevenge/maliciouscompliance/tifu removed: these subs have far
+    # fewer comments per post by nature, so the 500-comment bar made them
+    # permanently unreachable even for excellent posts.
     _STRICT_TIER_SUBS = {
         "amitheasshole",
         "aita",
-        "pettyrevenge",
-        "tifu",
-        "maliciouscompliance",
-        "entitledparents",
     }
     _STRICT_MIN_SCORE = 5000
     _STRICT_MIN_COMMENTS = 500
