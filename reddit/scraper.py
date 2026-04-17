@@ -144,6 +144,31 @@ class RedditScraper:
     # Regex: comment starts with verdict label (NTA/YTA/ESH/NAH/INFO)
     _VERDICT_START_RE = _re.compile(r'^\s*(NTA|YTA|ESH|NAH|INFO)\b', _re.IGNORECASE)
 
+    # Per-subreddit filter tiers based on YouTube Studio performance data.
+    # Poor-performing categories (AITA/PettyRevenge/tifu) require much higher
+    # upvote/comment thresholds so only top-of-top drama passes through;
+    # strong categories (Steam/manga/BuyItForLife) use config defaults.
+    _STRICT_TIER_SUBS = {
+        "amitheasshole",
+        "aita",
+        "pettyrevenge",
+        "tifu",
+        "maliciouscompliance",
+        "entitledparents",
+    }
+    _STRICT_MIN_SCORE = 5000
+    _STRICT_MIN_COMMENTS = 500
+
+    def _tier_threshold(self, subreddit: str) -> tuple[int, int]:
+        """Return (min_score, min_comments) for the given subreddit.
+
+        Strict-tier subreddits require the hard-coded high bar; everything
+        else falls back to the values supplied via config.
+        """
+        if subreddit and subreddit.lower() in self._STRICT_TIER_SUBS:
+            return (self._STRICT_MIN_SCORE, self._STRICT_MIN_COMMENTS)
+        return (self.min_upvotes, self.min_comments_count)
+
     def _parse_comments(self, comments_data: list) -> list[Comment]:
         """Parse comments from Reddit JSON response, verdict-leading first."""
         candidates: list[Comment] = []
@@ -237,6 +262,12 @@ class RedditScraper:
         children = data.get("data", {}).get("children", [])
         candidate_posts: list[tuple] = []  # (RedditPost, upvote_ratio)
 
+        # Apply per-subreddit tier thresholds (strict for AITA-family, default
+        # for strong-performing niches like Steam/manga/BuyItForLife).
+        tier_min_score, tier_min_comments = self._tier_threshold(
+            self.subreddit_name
+        )
+
         for child in children:
             post_data = child.get("data", {})
             post_id = post_data.get("id", "")
@@ -247,12 +278,12 @@ class RedditScraper:
 
             # Filter by upvotes
             score = post_data.get("score", 0)
-            if score < self.min_upvotes:
+            if score < tier_min_score:
                 continue
 
             # Filter by comment count
             num_comments = post_data.get("num_comments", 0)
-            if num_comments < self.min_comments_count:
+            if num_comments < tier_min_comments:
                 continue
 
             # Fetch comments for this post

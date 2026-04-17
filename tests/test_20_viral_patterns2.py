@@ -361,9 +361,9 @@ class TestViralityScoring:
                             "title": "I kicked out my sister after she cheated",
                             "selftext": "",
                             "author": "u1",
-                            "score": 500,
+                            "score": 5500,
                             "upvote_ratio": 0.75,
-                            "num_comments": 20,
+                            "num_comments": 600,
                             "permalink": "/r/AITA/comments/post1/",
                             "url": "url1",
                         }},
@@ -372,9 +372,9 @@ class TestViralityScoring:
                             "title": "I had a nice lunch with my mom",
                             "selftext": "",
                             "author": "u2",
-                            "score": 5000,  # higher score but boring
+                            "score": 20000,  # higher score but boring
                             "upvote_ratio": 0.98,
-                            "num_comments": 20,
+                            "num_comments": 800,
                             "permalink": "/r/AITA/comments/post2/",
                             "url": "url2",
                         }},
