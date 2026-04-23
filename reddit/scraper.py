@@ -171,6 +171,28 @@ class RedditScraper:
         title_lower = title.strip().lower()
         return any(title_lower.startswith(tag) for tag in self._IMAGE_TITLE_TAGS)
 
+    _IMAGE_DOMAINS = ("i.redd.it", "i.imgur.com", "preview.redd.it")
+    _IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".gifv")
+
+    def _is_image_post_data(
+        self, title: str, url: str = "", post_hint: str = ""
+    ) -> bool:
+        """Return True if the post is image-centric, by any signal:
+          - Title starts with a known image tag ([DISC], [FANART] …)
+          - post_hint is "image" (Reddit marks direct image uploads)
+          - URL is an image CDN (i.redd.it, i.imgur.com) or ends in image ext
+        """
+        if self._is_image_post(title):
+            return True
+        if post_hint == "image":
+            return True
+        url_lower = url.lower()
+        if any(domain in url_lower for domain in self._IMAGE_DOMAINS):
+            return True
+        if any(url_lower.endswith(ext) for ext in self._IMAGE_EXTS):
+            return True
+        return False
+
     def _tier_threshold(self, subreddit: str) -> tuple[int, int]:
         """Return (min_score, min_comments) for the given subreddit.
 
@@ -288,11 +310,14 @@ class RedditScraper:
             if post_id in history:
                 continue
 
-            # Skip image-centric posts ([DISC]/[FANART]/[ART]/[OC] etc.) —
-            # our text-card format can't show the artwork, producing confusing
-            # videos. Also avoids DMCA risk from manga/art publishers.
+            # Skip image-centric posts — our text-card format can't show
+            # the artwork, producing confusing videos. Also avoids DMCA risk.
+            # Detection: title tags ([DISC]/[FANART]/…) OR i.redd.it URL OR
+            # post_hint == "image" (catches Steam screenshot posts etc.)
             title = post_data.get("title", "")
-            if self._is_image_post(title):
+            post_url = post_data.get("url", "")
+            post_hint = post_data.get("post_hint", "")
+            if self._is_image_post_data(title, post_url, post_hint):
                 continue
 
             # Filter by upvotes

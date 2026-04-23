@@ -5,8 +5,8 @@
 [reddit]
 subreddit = "Steam+pcgaming"
 post_limit = 5
-min_upvotes = 300
-min_comments = 20
+min_upvotes = 1000
+min_comments = 50
 max_comment_length = 400
 top_comments = 6
 

@@ -92,12 +92,28 @@ _NICHE_CTA: dict[str, str] = {
     "investing":           "🔔 Subscribe for daily investing discussions",
 }
 
+# Bracket flair tags that subreddits prepend to titles. Strip these before
+# using the title as a YouTube title — they look amateurish to non-Reddit
+# audiences and confuse the recommendation algorithm's topic signals.
+_BRACKET_TAG = re.compile(r"^\[[^\]]{1,30}\]\s*[-–—:·]?\s*", re.IGNORECASE)
+
 # Prefixes to strip from Reddit titles before using as YouTube title
 _STRIP_PREFIXES = re.compile(
     r"^(aita|wibta|wita|am i the asshole|am i wrong|am i being|tifu by|tifu:?"
-    r"|\[disc\]|\[title\]|\[chapter\s*\d*\]|\[review\])\s*(for|by|:)?\s*",
+    r"|\[disc\]|\[title\]|\[chapter\s*\d*\]|\[review\]|\[spoiler\]"
+    r"|\[discussion\]|\[question\]|\[misc\])\s*(for|by|:)?\s*",
     re.IGNORECASE,
 )
+
+
+def clean_reddit_title(title: str) -> str:
+    """Strip Reddit-specific flair tags from a title for use as YouTube title.
+
+    Removes leading bracket tags like [TITLE], [SPOILER], [DISCUSSION],
+    [QUESTION], [MISC] and normalises surrounding whitespace.
+    """
+    cleaned = _BRACKET_TAG.sub("", title).strip()
+    return cleaned or title
 
 # Context prefixes injected into short gaming titles
 _GAMING_BOOST: dict[str, str] = {
@@ -364,7 +380,9 @@ class MetaGenerator:
         is_update = bool(re.search(r"\b(UPDATE|UPDATED|FOLLOW.?UP|PART\s*\d+)\b", post.title, re.IGNORECASE))
         update_badge = "UPDATE: " if is_update else ""
 
-        text = _STRIP_PREFIXES.sub("", post.title).strip()
+        # Strip Reddit bracket tags first, then known preamble prefixes
+        text = clean_reddit_title(post.title)
+        text = _STRIP_PREFIXES.sub("", text).strip()
         # Capitalise first letter
         if text:
             text = text[0].upper() + text[1:]
