@@ -35,19 +35,21 @@ def test_aita_tier_has_high_bar():
     assert min_comments >= 500
 
 
-def test_pettyrevenge_tier_has_high_bar():
-    """PettyRevenge also performed poorly → strict filter."""
-    s = _make_scraper()
+def test_pettyrevenge_tier_uses_config_defaults():
+    """PettyRevenge posts rarely hit 500 comments by nature, so the strict
+    500-comment bar made them permanently unreachable. Use config defaults."""
+    s = _make_scraper(min_upvotes=100, min_comments=10)
     min_score, min_comments = s._tier_threshold("pettyrevenge")
-    assert min_score >= 5000
-    assert min_comments >= 500
+    assert min_score < 5000
+    assert min_score == 100
 
 
-def test_tifu_tier_has_high_bar():
-    """TIFU same tier as AITA (story drama)."""
-    s = _make_scraper()
+def test_tifu_tier_uses_config_defaults():
+    """TIFU similarly comment-light — config defaults, not strict tier."""
+    s = _make_scraper(min_upvotes=100, min_comments=10)
     min_score, min_comments = s._tier_threshold("tifu")
-    assert min_score >= 5000
+    assert min_score < 5000
+    assert min_score == 100
 
 
 def test_steam_tier_uses_config_defaults():

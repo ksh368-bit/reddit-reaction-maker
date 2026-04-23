@@ -157,6 +157,20 @@ class RedditScraper:
     _STRICT_MIN_SCORE = 5000
     _STRICT_MIN_COMMENTS = 500
 
+    # Title tags that indicate an image-centric post (artwork, fanart, photo).
+    # These produce poor videos in our text-card format because viewers can't
+    # see the image being discussed. Also carries DMCA risk if images are used.
+    _IMAGE_TITLE_TAGS = {"[disc]", "[fanart]", "[art]", "[pic]", "[oc]", "[image]"}
+
+    def _is_image_post(self, title: str) -> bool:
+        """Return True if the post title starts with an image-type tag.
+
+        Matches case-insensitively against known image tags that indicate the
+        primary content is artwork/photos rather than discussion text.
+        """
+        title_lower = title.strip().lower()
+        return any(title_lower.startswith(tag) for tag in self._IMAGE_TITLE_TAGS)
+
     def _tier_threshold(self, subreddit: str) -> tuple[int, int]:
         """Return (min_score, min_comments) for the given subreddit.
 
@@ -272,6 +286,13 @@ class RedditScraper:
 
             # Skip already processed
             if post_id in history:
+                continue
+
+            # Skip image-centric posts ([DISC]/[FANART]/[ART]/[OC] etc.) —
+            # our text-card format can't show the artwork, producing confusing
+            # videos. Also avoids DMCA risk from manga/art publishers.
+            title = post_data.get("title", "")
+            if self._is_image_post(title):
                 continue
 
             # Filter by upvotes
