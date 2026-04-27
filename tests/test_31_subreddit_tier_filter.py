@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from reddit.scraper import RedditScraper
 
 
-def _make_scraper(min_upvotes=100, min_comments=10):
+def _make_scraper(min_upvotes=500, min_comments=20):
     config = {
         "reddit": {
             "subreddits": ["AmItheAsshole"],
@@ -38,42 +38,42 @@ def test_aita_tier_has_high_bar():
 def test_pettyrevenge_tier_uses_config_defaults():
     """PettyRevenge posts rarely hit 500 comments by nature, so the strict
     500-comment bar made them permanently unreachable. Use config defaults."""
-    s = _make_scraper(min_upvotes=100, min_comments=10)
+    s = _make_scraper(min_upvotes=500, min_comments=20)
     min_score, min_comments = s._tier_threshold("pettyrevenge")
     assert min_score < 5000
-    assert min_score == 100
+    assert min_score == 500
 
 
 def test_tifu_tier_uses_config_defaults():
     """TIFU similarly comment-light — config defaults, not strict tier."""
-    s = _make_scraper(min_upvotes=100, min_comments=10)
+    s = _make_scraper(min_upvotes=500, min_comments=20)
     min_score, min_comments = s._tier_threshold("tifu")
     assert min_score < 5000
-    assert min_score == 100
+    assert min_score == 500
 
 
 def test_steam_tier_uses_config_defaults():
     """Steam performed well → keep config defaults."""
-    s = _make_scraper(min_upvotes=100, min_comments=10)
+    s = _make_scraper(min_upvotes=500, min_comments=20)
     min_score, min_comments = s._tier_threshold("Steam")
     # Should not be the strict tier
     assert min_score < 5000
-    assert min_score == 100
-    assert min_comments == 10
+    assert min_score == 500
+    assert min_comments == 20
 
 
 def test_manga_tier_uses_config_defaults():
     """manga performed well → config defaults."""
-    s = _make_scraper(min_upvotes=100, min_comments=10)
+    s = _make_scraper(min_upvotes=500, min_comments=20)
     min_score, _ = s._tier_threshold("manga")
-    assert min_score == 100
+    assert min_score == 500
 
 
 def test_buyitforlife_tier_uses_config_defaults():
     """BuyItForLife performed well → config defaults."""
-    s = _make_scraper(min_upvotes=100, min_comments=10)
+    s = _make_scraper(min_upvotes=500, min_comments=20)
     min_score, _ = s._tier_threshold("BuyItForLife")
-    assert min_score == 100
+    assert min_score == 500
 
 
 def test_case_insensitive_lookup():
@@ -86,7 +86,7 @@ def test_case_insensitive_lookup():
 
 def test_unknown_subreddit_uses_config():
     """Unknown subreddit falls back to config defaults."""
-    s = _make_scraper(min_upvotes=100, min_comments=10)
+    s = _make_scraper(min_upvotes=500, min_comments=20)
     min_score, min_comments = s._tier_threshold("SomeRandomSub")
-    assert min_score == 100
-    assert min_comments == 10
+    assert min_score == 500
+    assert min_comments == 20

@@ -1,0 +1,53 @@
+# Roblox Shorts Video Maker - Configuration
+# No Reddit API key required! Uses .json endpoints directly.
+
+[reddit]
+# Primary subreddit (used if subreddits list is empty)
+subreddit = "AmItheAsshole"
+# Rotate through these subreddits randomly; overrides subreddit if non-empty
+subreddits = ["AmItheAsshole", "relationship_advice", "tifu", "pettyrevenge", "maliciouscompliance"]
+post_limit = 5          # Number of posts to fetch per run
+min_upvotes = 500       # Minimum upvotes to consider
+min_comments = 20       # Minimum comments on post
+min_comment_score = 50  # Skip low-quality comments below this upvote threshold
+max_comment_length = 80   # ~15 words — viral channels use punchy verdict-style comments only
+top_comments = 2          # 100M+ Shorts use 0-2 comments; story alone fills the time budget
+
+[tts]
+engine = "edge-tts"     # Options: edge-tts (best), gtts, elevenlabs, openai
+language = "en"         # Language code: en, ko, ja, etc.
+voice = "en-US-AriaNeural"  # edge-tts voice (see: edge-tts --list-voices)
+rate = "+25%"           # edge-tts speed (+20% = 20% faster, natural Shorts pacing)
+slow = false            # gTTS only: slower speech
+
+[video]
+width = 1080
+height = 1920
+fps = 30
+max_duration = 55       # 45-90s is algorithm sweet spot; 55s gives full story with good completion
+background_dir = "assets/backgrounds"
+font = "assets/fonts/Montserrat-Bold.ttf"
+title_font_size = 52
+comment_font_size = 165
+text_color = "white"
+text_stroke_color = "black"
+text_stroke_width = 3
+watermark = "r/roblox"
+opacity = 0.45          # Background dimming (0.0=bright, 1.0=black) — 0.45 dims ~55%
+bgm_enabled = true      # Background music on/off
+bgm_volume = 0.08       # BGM volume — must stay well below TTS voice level
+
+[output]
+dir = "output"
+filename_template = "{subreddit}_{post_id}_{date}"
+history_file = "output/history.json"
+
+[youtube]
+enabled = true
+credentials_path = "credentials.json"
+token_path = "token.json"
+privacy = "public"
+category_id = "24"
+made_for_kids = false
+notify_subscribers = true
+upload_thumbnail = true

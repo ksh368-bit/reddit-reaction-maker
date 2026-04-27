@@ -24,8 +24,8 @@
 # Reddit data source configuration
 subreddit = "roblox"        # Subreddit to fetch from (or comma-separated list for multireddit)
 post_limit = 5              # Max posts to process per run
-min_upvotes = 100           # Minimum post score (upvotes)
-min_comments = 10           # Minimum comments required (ensures discussion)
+min_upvotes = 500           # Minimum post score (upvotes)
+min_comments = 20           # Minimum comments required (ensures discussion)
 max_comment_length = 200    # Truncate comments >200 chars (shorter = punchier audio)
 top_comments = 4            # Number of comments to include (~20s each = ~60s Short)
 
